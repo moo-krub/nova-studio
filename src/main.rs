@@ -258,6 +258,10 @@ enum UiCommand {
     ToggleDevTools,
     OpenCommandPalette,
     SetUiModalOpen { open: bool },
+    StartInPlaceUpdate { download_url: String, version: String },
+    RelaunchAfterUpdate,
+    InternalUpdateProgress { pct: u32, step: String, log: String },
+    InternalUpdateComplete { success: bool, message: String },
     CycleTilingMode,
     MoveTabById { id: usize, before_id: Option<usize> },
     ToggleBookmarksBar,
@@ -419,6 +423,15 @@ fn hook_allow_all_certificates(webview: &wry::WebView) {
 fn hook_allow_all_certificates(_webview: &wry::WebView) {}
 
 fn main() -> wry::Result<()> {
+    if let Ok(current_exe) = std::env::current_exe() {
+        if let Some(parent) = current_exe.parent() {
+            let old_file = parent.join(format!("{}.old", current_exe.file_name().unwrap_or_default().to_string_lossy()));
+            let _ = std::fs::remove_file(old_file);
+            let tmp_file = parent.join("nova_update_tmp.exe");
+            let _ = std::fs::remove_file(tmp_file);
+        }
+    }
+
     let extreme_gpu_flags = concat!(
         "--ignore-gpu-blocklist ",
         "--ignore-certificate-errors ",
@@ -750,6 +763,8 @@ fn main() -> wry::Result<()> {
                                         | UiCommand::ResetZoom
                                         | UiCommand::OpenCommandPalette
                                         | UiCommand::SetUiModalOpen { .. }
+                                        | UiCommand::StartInPlaceUpdate { .. }
+                                        | UiCommand::RelaunchAfterUpdate
                                         | UiCommand::CycleTilingMode
                                         | UiCommand::ToggleZenMode
                                         | UiCommand::SnoozeInactiveTabs
@@ -1135,6 +1150,141 @@ fn main() -> wry::Result<()> {
                             position: LogicalPosition::new(0.0, 0.0).into(),
                             size: LogicalSize::new(win_size.width, target_h).into(),
                         });
+                    }
+
+                    UiCommand::StartInPlaceUpdate { download_url, version } => {
+                        let proxy_upd = proxy.clone();
+                        std::thread::spawn(move || {
+                            let _ = proxy_upd.send_event(UiCommand::InternalUpdateProgress {
+                                pct: 10,
+                                step: "เตรียมดาวน์โหลดเวอร์ชันใหม่".into(),
+                                log: format!("กำลังเชื่อมต่อเซิร์ฟเวอร์อัปเดต ({version})..."),
+                            });
+
+                            let current_exe = match std::env::current_exe() {
+                                Ok(p) => p,
+                                Err(e) => {
+                                    let _ = proxy_upd.send_event(UiCommand::InternalUpdateComplete {
+                                        success: false,
+                                        message: format!("ไม่สามารถระบุตำแหน่งไฟล์ปัจจุบันได้: {e}"),
+                                    });
+                                    return;
+                                }
+                            };
+
+                            let parent_dir = current_exe.parent().unwrap_or(std::path::Path::new("."));
+                            let temp_download = parent_dir.join("nova_update_tmp.exe");
+                            let old_backup = parent_dir.join(format!("{}.old", current_exe.file_name().unwrap_or_default().to_string_lossy()));
+
+                            let _ = std::fs::remove_file(&temp_download);
+                            let _ = std::fs::remove_file(&old_backup);
+
+                            let _ = proxy_upd.send_event(UiCommand::InternalUpdateProgress {
+                                pct: 30,
+                                step: "กำลังดาวน์โหลดไฟล์อัปเดต".into(),
+                                log: "กำลังรับส่งข้อมูลเวอร์ชันใหม่ด้วยความเร็วสูง...".into(),
+                            });
+
+                            let download_res = std::process::Command::new("curl.exe")
+                                .args(&["-L", "--fail", "-sS", "-o", temp_download.to_string_lossy().as_ref(), &download_url])
+                                .status();
+
+                            let mut ok = download_res.map(|s| s.success()).unwrap_or(false);
+                            if !ok || !temp_download.exists() || temp_download.metadata().map(|m| m.len()).unwrap_or(0) < 500_000 {
+                                let _ = proxy_upd.send_event(UiCommand::InternalUpdateProgress {
+                                    pct: 50,
+                                    step: "กำลังดาวน์โหลดด้วยช่องทางสำรอง".into(),
+                                    log: "สลับไปใช้ PowerShell WebClient...".into(),
+                                });
+
+                                let ps_cmd = format!(
+                                    "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('{}', '{}')",
+                                    download_url, temp_download.to_string_lossy()
+                                );
+                                let ps_status = std::process::Command::new("powershell.exe")
+                                    .args(&["-NoProfile", "-NonInteractive", "-Command", &ps_cmd])
+                                    .status();
+                                ok = ps_status.map(|s| s.success()).unwrap_or(false);
+                            }
+
+                            if !ok || !temp_download.exists() || temp_download.metadata().map(|m| m.len()).unwrap_or(0) < 500_000 {
+                                let _ = proxy_upd.send_event(UiCommand::InternalUpdateComplete {
+                                    success: false,
+                                    message: "การดาวน์โหลดไม่สมบูรณ์ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต".into(),
+                                });
+                                return;
+                            }
+
+                            let _ = proxy_upd.send_event(UiCommand::InternalUpdateProgress {
+                                pct: 85,
+                                step: "กำลังสลับแทนที่ไฟล์เวอร์ชันใหม่".into(),
+                                log: "ตรวจสอบความสมบูรณ์สำเร็จ เตรียมแทนที่ไฟล์".into(),
+                            });
+
+                            if let Err(e) = std::fs::rename(&current_exe, &old_backup) {
+                                let _ = proxy_upd.send_event(UiCommand::InternalUpdateComplete {
+                                    success: false,
+                                    message: format!("ไม่สามารถสลับชื่อไฟล์เดิมได้: {e}"),
+                                });
+                                return;
+                            }
+
+                            if let Err(e) = std::fs::rename(&temp_download, &current_exe) {
+                                let _ = std::fs::rename(&old_backup, &current_exe);
+                                let _ = proxy_upd.send_event(UiCommand::InternalUpdateComplete {
+                                    success: false,
+                                    message: format!("ไม่สามารถวางไฟล์ใหม่แทนที่ได้: {e}"),
+                                });
+                                return;
+                            }
+
+                            let _ = proxy_upd.send_event(UiCommand::InternalUpdateProgress {
+                                pct: 100,
+                                step: "อัปเดตเรียบร้อยแล้ว".into(),
+                                log: format!("Nova Studio ได้รับการอัปเดตเป็นเวอร์ชัน {version} เรียบร้อยแล้ว!"),
+                            });
+
+                            let _ = proxy_upd.send_event(UiCommand::InternalUpdateComplete {
+                                success: true,
+                                message: format!("อัปเดตเป็น {version} สำเร็จเรียบร้อย!"),
+                            });
+                        });
+                    }
+
+                    UiCommand::RelaunchAfterUpdate => {
+                        save_session_snapshot(&mut storage, &tabs, &tab_order, &current_workspace, active_tab_id, &blocked_counter, true);
+                        flush_save_sync(storage.clone());
+                        storage.save_direct();
+
+                        if let Ok(current_exe) = std::env::current_exe() {
+                            let _ = std::process::Command::new(current_exe).spawn();
+                        }
+                        std::process::exit(0);
+                    }
+
+                    UiCommand::InternalUpdateProgress { pct, step, log } => {
+                        let script = format!(
+                            "window.__novaOnUpdateProgress && window.__novaOnUpdateProgress({}, {}, {});",
+                            pct,
+                            serde_json::to_string(&step).unwrap_or_default(),
+                            serde_json::to_string(&log).unwrap_or_default()
+                        );
+                        let _ = ui_webview.evaluate_script(&script);
+                        if let Some(tab) = tabs.get(&active_tab_id) {
+                            let _ = tab.webview.evaluate_script(&script);
+                        }
+                    }
+
+                    UiCommand::InternalUpdateComplete { success, message } => {
+                        let script = format!(
+                            "window.__novaOnUpdateComplete && window.__novaOnUpdateComplete({}, {});",
+                            success,
+                            serde_json::to_string(&message).unwrap_or_default()
+                        );
+                        let _ = ui_webview.evaluate_script(&script);
+                        if let Some(tab) = tabs.get(&active_tab_id) {
+                            let _ = tab.webview.evaluate_script(&script);
+                        }
                     }
 
                     UiCommand::CycleTilingMode => {

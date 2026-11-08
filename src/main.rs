@@ -26,7 +26,7 @@ use tao::{
 use wry::{Rect, WebView, WebViewBuilder};
 
 #[cfg(windows)]
-use wry::WebViewBuilderExtWindows;
+use wry::{WebViewBuilderExtWindows, WebViewExtWindows};
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 
@@ -389,10 +389,38 @@ fn shell_ipc_allowed(body: &str) -> bool {
         .is_some_and(|c| !c.starts_with("Internal"))
 }
 
+#[cfg(windows)]
+fn hook_allow_all_certificates(webview: &wry::WebView) {
+    use webview2_com::{
+        Microsoft::Web::WebView2::Win32::*,
+        ServerCertificateErrorDetectedEventHandler,
+    };
+    use windows_core::Interface;
+
+    if let Ok(wv14) = webview.webview().cast::<ICoreWebView2_14>() {
+        let mut token = 0i64;
+        let _ = unsafe {
+            wv14.add_ServerCertificateErrorDetected(
+                &ServerCertificateErrorDetectedEventHandler::create(Box::new(|_, args| {
+                    if let Some(args) = args {
+                        let _ = args.SetAction(COREWEBVIEW2_SERVER_CERTIFICATE_ERROR_ACTION_ALWAYS_ALLOW);
+                    }
+                    Ok(())
+                })),
+                &mut token,
+            )
+        };
+    }
+}
+
+#[cfg(not(windows))]
+fn hook_allow_all_certificates(_webview: &wry::WebView) {}
+
 fn main() -> wry::Result<()> {
     let extreme_gpu_flags = concat!(
         "--ignore-gpu-blocklist ",
         "--ignore-certificate-errors ",
+        "--test-type ",
         "--enable-gpu-rasterization ",
         "--enable-zero-copy ",
         "--enable-oop-rasterization ",
@@ -401,9 +429,9 @@ fn main() -> wry::Result<()> {
         "--enable-parallel-downloading ",
         "--disk-cache-size=1073741824 ",
         "--autoplay-policy=no-user-gesture-required ",
-        "--enable-features=CanvasOopRasterization,UseSkiaRenderer,WebAssemblyLazyCompilation,AsyncDns,DnsOverHttps,EncryptedClientHello ",
+        "--enable-features=CanvasOopRasterization,UseSkiaRenderer,WebAssemblyLazyCompilation,AsyncDns,DnsOverHttps ",
         "--dns-over-https-mode=secure ",
-        "--doh-templates=https://1.1.1.1/dns-query ",
+        "--doh-templates=https://1.1.1.1/dns-query https://dns.google/dns-query ",
         "--disable-blink-features=AutomationControlled"
     );
     unsafe {
@@ -490,6 +518,7 @@ fn main() -> wry::Result<()> {
             }
         })
         .build_as_child(&window)?;
+    hook_allow_all_certificates(&ui_webview);
 
     let proxy_panel = proxy.clone();
     let panel_webview = WebViewBuilder::new()
@@ -507,6 +536,7 @@ fn main() -> wry::Result<()> {
             }
         })
         .build_as_child(&window)?;
+    hook_allow_all_certificates(&panel_webview);
 
     let mut tabs: HashMap<usize, Tab> = HashMap::new();
     let mut tab_order: Vec<usize> = Vec::new();
@@ -726,6 +756,7 @@ fn main() -> wry::Result<()> {
                         }
 
                         if let Ok(webview) = builder.build_as_child(&window) {
+                            hook_allow_all_certificates(&webview);
                             let default_title = if is_incognito { "🕵️ แท็บไร้ตัวตน" } else { "แท็บใหม่" };
                             tabs.insert(
                                 id,

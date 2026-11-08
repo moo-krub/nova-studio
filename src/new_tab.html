@@ -759,6 +759,96 @@
       .shortcut-grid { grid-template-columns: 1fr; }
       .note-panel { transform: none; }
     }
+  
+    /* =========================================================================
+       SALA GLYPHS — BESPOKE SVG ICON ARCHITECTURE
+       ========================================================================= */
+    .icon-library,
+    svg.icon-library {
+      position: absolute;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .sala-icon {
+      width: 22px;
+      height: 22px;
+      display: inline-block;
+      vertical-align: middle;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.65;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Organic, subtly asymmetric signature frames for Sala */
+    .icon-shell {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 12px 16px 10px 15px;
+      transition: color .18s, background .18s, border-radius .2s, transform .2s, box-shadow .2s;
+    }
+
+    .rail-button {
+      width: 46px;
+      height: 46px;
+      padding: 3px;
+      background: transparent;
+      border: 0;
+      display: grid;
+      place-items: center;
+      margin: auto;
+      cursor: pointer;
+      border-radius: 14px;
+    }
+
+    .rail-button:hover .icon-shell {
+      color: var(--accent);
+      background: var(--field);
+      border-color: var(--line);
+      transform: translateY(-2px);
+    }
+
+    .rail-button.active .icon-shell {
+      color: var(--surface);
+      background: var(--accent);
+      border-color: var(--accent);
+      transform: rotate(-4deg);
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 24%, transparent);
+    }
+
+    html[data-theme="zine"] .icon-shell {
+      border-radius: 0;
+      box-shadow: 2px 2px 0 var(--text);
+    }
+
+    html[data-theme="soda"] .icon-shell {
+      border-radius: 50% 42% 48% 40%;
+    }
+
+    .brand-mark {
+      display: inline-grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 10px 14px 8px 12px;
+      background: var(--accent);
+      color: var(--surface);
+      transition: transform .25s ease;
+    }
+
+    .brand:hover .brand-mark {
+      transform: rotate(18deg) scale(1.08);
+    }
+
   </style>
 </head>
 
@@ -767,7 +857,7 @@
     <!-- Top Header Bar -->
     <header class="tabbar">
       <div class="brand" onclick="goHome()" title="Nova Studio Home">
-        <span class="brand-mark" aria-hidden="true">✳</span>
+        <span class="brand-mark" aria-hidden="true"><svg class="sala-icon" style="width:18px;height:18px;"><use href="#sala-spark"></use></svg></span>
         <div class="brand-title">
           <span>sala.</span>
           <span>NOVA SPATIAL</span>
@@ -787,7 +877,7 @@
         </label>
 
         <button class="shuffle" id="shuffleTheme" onclick="shuffleTheme()" title="สลับสไตล์แบบสุ่ม">
-          ✦ <span>สุ่มลุค</span>
+          <svg class="sala-icon" style="width:16px;height:16px;display:inline-block;" aria-hidden="true"><use href="#sala-spark"></use></svg> <span>สุ่มลุค</span>
         </button>
       </div>
     </header>
@@ -797,15 +887,27 @@
       <!-- Left Rail Navigation -->
       <nav class="rail" aria-label="เมนูเบราว์เซอร์">
         <div class="rail-group">
-          <button class="rail-button active" onclick="goHome()" title="หน้าแรก" aria-label="หน้าแรก">⌂</button>
-          <button class="rail-button" onclick="sendAction('ToggleSidePanel')" title="ประวัติและรายการโปรด (Bookmarks & History)" aria-label="ประวัติและบุ๊กมาร์ก">☆</button>
-          <button class="rail-button" onclick="sendAction('ToggleReaderMode')" title="โหมดอ่านบทความสบายตา (Reader Mode)" aria-label="อ่านบทความ">▤</button>
-          <button class="rail-button" onclick="sendAction('ToggleSidePanel')" title="การดาวน์โหลด (Downloads)" aria-label="ดาวน์โหลด">↓</button>
+          <button class="rail-button active" onclick="goHome()" title="หน้าแรก" aria-label="หน้าแรก">
+            <span class="icon-shell"><svg class="sala-icon" aria-hidden="true"><use href="#sala-home"></use></svg></span>
+          </button>
+          <button class="rail-button" onclick="sendAction('ToggleSidePanel')" title="ประวัติและรายการโปรด (Bookmarks & History)" aria-label="ประวัติและบุ๊กมาร์ก">
+            <span class="icon-shell"><svg class="sala-icon" aria-hidden="true"><use href="#sala-bookmark"></use></svg></span>
+          </button>
+          <button class="rail-button" onclick="sendAction('ToggleReaderMode')" title="โหมดอ่านบทความสบายตา (Reader Mode)" aria-label="อ่านบทความ">
+            <span class="icon-shell"><svg class="sala-icon" aria-hidden="true"><use href="#sala-reading"></use></svg></span>
+          </button>
+          <button class="rail-button" onclick="sendAction('ToggleSidePanel')" title="การดาวน์โหลด (Downloads)" aria-label="ดาวน์โหลด">
+            <span class="icon-shell"><svg class="sala-icon" aria-hidden="true"><use href="#sala-download"></use></svg></span>
+          </button>
         </div>
 
         <div class="rail-group">
-          <button class="rail-button" onclick="sendAction('ToggleVerticalTabs')" title="สลับโหมดแท็บแนวตั้ง (Vertical Tabs)" aria-label="แท็บแนวตั้ง">📑</button>
-          <button class="rail-button" onclick="openSpotlight()" title="Spotlight Command Palette (Ctrl+K)" aria-label="Spotlight">⌘</button>
+          <button class="rail-button" onclick="sendAction('ToggleVerticalTabs')" title="สลับโหมดแท็บแนวตั้ง (Vertical Tabs)" aria-label="แท็บแนวตั้ง">
+            <span class="icon-shell"><svg class="sala-icon" aria-hidden="true"><use href="#sala-extension"></use></svg></span>
+          </button>
+          <button class="rail-button" onclick="openSpotlight()" title="Spotlight Command Palette (Ctrl+K)" aria-label="Spotlight">
+            <span class="icon-shell"><svg class="sala-icon" aria-hidden="true"><use href="#sala-settings"></use></svg></span>
+          </button>
         </div>
       </nav>
 
@@ -829,7 +931,7 @@
 
         <!-- Big Search Form -->
         <form class="big-search" id="homeSearch" onsubmit="handleSearch(event)">
-          <span style="font-size:20px;color:var(--muted);" aria-hidden="true">⌕</span>
+          <span class="icon-shell" style="width:32px;height:32px;color:var(--muted);border:none;background:none;transform:none;" aria-hidden="true"><svg class="sala-icon" style="width:20px;height:20px;"><use href="#sala-search"></use></svg></span>
           <input
             id="homeQuery"
             type="search"
@@ -1135,5 +1237,108 @@
       loadSavedNote();
     });
   </script>
+  <!-- =========================================================================
+       SALA GLYPHS — SVG SYMBOL SPRITE LIBRARY
+       ========================================================================= -->
+  <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <!-- หน้าแรก: ดัดจากรูปบ้านให้คล้ายหลังคาศาลา -->
+      <symbol id="sala-home" viewBox="0 0 24 24">
+        <path d="M3.5 10.2 12 3.4l8.5 6.8" />
+        <path d="M5.8 9v9.5c0 .8.6 1.5 1.4 1.5h9.6c.8 0 1.4-.7 1.4-1.5V9" />
+        <path d="M10 20v-5.2c0-.7.5-1.2 1.2-1.2h1.6c.7 0 1.2.5 1.2 1.2V20" />
+      </symbol>
+
+      <!-- ค้นหา -->
+      <symbol id="sala-search" viewBox="0 0 24 24">
+        <path d="M10.4 4.1c3.5 0 6.3 2.8 6.3 6.3s-2.8 6.3-6.3 6.3-6.3-2.8-6.3-6.3 2.8-6.3 6.3-6.3Z" />
+        <path d="m15.2 15.2 4.6 4.6" />
+        <path d="M7.6 8.4c.7-1.2 2.1-1.8 3.5-1.6" opacity=".55" />
+      </symbol>
+
+      <!-- ย้อนกลับ / ไปหน้าถัดไป -->
+      <symbol id="sala-back" viewBox="0 0 24 24">
+        <path d="M19 12H5.5" />
+        <path d="m10.8 5.8-6 6.2 6 6" />
+        <path d="M15.5 5.5v2" opacity=".45" />
+      </symbol>
+
+      <symbol id="sala-forward" viewBox="0 0 24 24">
+        <path d="M5 12h13.5" />
+        <path d="m13.2 5.8 6 6.2-6 6" />
+      </symbol>
+
+      <!-- รีเฟรช เว้นช่องเล็กๆ ให้ดูมีบุคลิก -->
+      <symbol id="sala-reload" viewBox="0 0 24 24">
+        <path d="M19.2 8.2A8 8 0 0 0 5 7.5L3.2 9.5" />
+        <path d="M3.2 5.4v4.3h4.3" />
+        <path d="M4.8 15.8A8 8 0 0 0 19 16.5l1.8-2" />
+        <path d="M20.8 18.6v-4.3h-4.3" />
+      </symbol>
+
+      <!-- บุกมาร์ก -->
+      <symbol id="sala-bookmark" viewBox="0 0 24 24">
+        <path d="M6.6 4.1c0-.6.5-1.1 1.1-1.4h8.6c.7 0 1.2.5 1.2 1.2v16l-6.2-3.8-5.3 4.1V4.1Z" />
+        <path d="M9.7 7.2h4.8" opacity=".55" />
+      </symbol>
+
+      <!-- รายการอ่านภายหลัง -->
+      <symbol id="sala-reading" viewBox="0 0 24 24">
+        <path d="M12 6.1c-1.8-1.5-4.1-2-7.7-1.5v14.2c3.1-.4 5.8.1 7.7 1.7V6.1Z" />
+        <path d="M12 6.1c1.8-1.5 4.1-2 7.7-1.5v14.2c-3.1-.4-5.9.1-7.7 1.7" />
+        <path d="M7.2 8.6c.9-.1 1.6 0 2.3.2M14.5 8.8c.7-.2 1.5-.3 2.3-.3" />
+      </symbol>
+
+      <!-- ดาวน์โหลด -->
+      <symbol id="sala-download" viewBox="0 0 24 24">
+        <path d="M12 3.8v10.7" />
+        <path d="m7.8 10.7 4.2 4.3 4.2-4.3" />
+        <path d="M4.4 15.8v3.2c0 .9.7 1.6 1.6 1.6h12c.9 0 1.6-.7 1.6-1.6v-3.2" />
+      </symbol>
+
+      <!-- เพิ่มแท็บ -->
+      <symbol id="sala-plus" viewBox="0 0 24 24">
+        <path d="M12 5.5v13M5.5 12h13" />
+        <path d="M17.7 4.5v2M16.7 5.5h2" opacity=".65" />
+      </symbol>
+
+      <!-- ปิดแท็บ -->
+      <symbol id="sala-close" viewBox="0 0 24 24">
+        <path d="m7 7 10 10M17 7 7 17" />
+      </symbol>
+
+      <!-- เพิ่มแท็บ -->
+      <symbol id="sala-new-tab" viewBox="0 0 24 24">
+        <path d="M8.2 4.2h7.6c2 0 3.4 1.4 3.4 3.4v8.8c0 2-1.4 3.4-3.4 3.4H8.2c-2 0-3.4-1.4-3.4-3.4V7.6c0-1.9 1.4-3.4 3.4-3.4Z" />
+        <path d="M12 8.5v7M8.5 12h7" />
+      </symbol>
+
+      <!-- ส่วนขยาย / ปลั๊กอิน: จิ๊กซอว์แบบเส้นต่อเนื่อง -->
+      <symbol id="sala-extension" viewBox="0 0 24 24">
+        <path d="M9.2 4.3c0-1 1-1.8 2-1.3 1.1.5 1.2 2.2.2 2.8h3.4c.6 0 1 .4 1 1v3.1c1.4-.8 3.1.1 3.1 1.7 0 1.7-1.8 2.6-3.1 1.7v4.2c0 .7-.5 1.2-1.2 1.2h-3.3c.7 1.6-.3 3.3-1.9 3.3-1.7 0-2.7-1.8-1.8-3.3H5.9c-.8 0-1.3-.5-1.3-1.3v-3.4c1.7.8 3.4-.2 3.4-1.8 0-1.7-1.8-2.7-3.4-1.8V7.7c0-.8.6-1.4 1.4-1.4h3.2v-2Z" />
+      </symbol>
+
+      <!-- ตั้งค่า: สไตล์ sliders -->
+      <symbol id="sala-settings" viewBox="0 0 24 24">
+        <path d="M4 7h7M15 7h5M4 17h3M11 17h9" />
+        <path d="M11 4.8v4.4M7 14.8v4.4" />
+        <circle cx="13" cy="7" r="2" />
+        <circle cx="9" cy="17" r="2" />
+      </symbol>
+
+      <!-- สุ่มธีม / ดาวแห่งความสงบ: ลายเซ็น Sala -->
+      <symbol id="sala-spark" viewBox="0 0 24 24">
+        <path d="M12 2.8c.5 5.2 2.3 8 7.1 9.1-4.8 1.2-6.6 4-7.1 8.4-.5-4.4-2.3-7.2-7.2-8.4C9.7 10.8 11.5 8 12 2.8Z" />
+        <path d="M19 3.5v3M17.5 5h3" />
+      </symbol>
+
+      <!-- บุกมาร์กแบบติดแล้ว -->
+      <symbol id="sala-bookmarked" viewBox="0 0 24 24">
+        <path d="M6.5 4.2c0-.8.6-1.4 1.4-1.4h8.2c.8 0 1.4.6 1.4 1.4v16.1L12 16.2l-5.5 4.1V4.2Z" />
+        <path d="m9.2 9.3 1.8 1.8 3.7-3.8" />
+      </symbol>
+    </defs>
+  </svg>
+
 </body>
 </html>

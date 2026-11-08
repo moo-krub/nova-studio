@@ -25,6 +25,10 @@ tao = "0.37.2"
 wry = { version = "0.57.1", features = ["devtools"] }
 mimalloc = { version = "0.1", default-features = false }
 
+[target.'cfg(windows)'.dependencies]
+webview2-com = "0.39.1"
+windows-core = "0.62.2"
+
 [build-dependencies]
 winres = "0.1.12"
 

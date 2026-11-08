@@ -1124,6 +1124,8 @@ dependencies = [
  "serde",
  "serde_json",
  "tao",
+ "webview2-com",
+ "windows-core",
  "winres",
  "wry",
 ]

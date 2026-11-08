@@ -1,283 +1,1139 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="th" data-theme="paper">
 <head>
-<meta charset="UTF-8">
-<title>Nova New Tab</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap" media="print" onload="this.media='all'">
-<style>
-    /* Nova Flux — design tokens ชุดเดียวกับเชลล์หลัก */
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#eee8dc" />
+  <title>Nova Studio — Sala Space</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    * { box-sizing: border-box; }
+
     :root {
-        --bg-base: #0a0a0f;
-        --accent: #6366f1;
-        --accent-bright: #818cf8;
-        --accent-glow: rgba(99, 102, 241, 0.22);
-        --accent-subtle: rgba(99, 102, 241, 0.11);
-        --border-soft: rgba(255, 255, 255, 0.07);
-        --border-strong: rgba(255, 255, 255, 0.13);
-        --text-primary: #f2f2f5;
-        --text-secondary: #a3a3af;
-        --text-muted: #64646f;
-        --radius-lg: 14px;
-        --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
-        --font-main: 'IBM Plex Sans Thai', 'Segoe UI', sans-serif;
-        --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+      --bg: #eee8dc;
+      --chrome: #e6ddcf;
+      --surface: #fffdf7;
+      --field: #f4eee4;
+      --text: #292722;
+      --muted: #7b756c;
+      --accent: #df684a;
+      --accent-2: #e2b64d;
+      --line: #ddd4c6;
+      --radius: 24px;
+      --shadow: 0 24px 70px rgb(69 54 36 / 18%);
+      --soft-shadow: 0 5px 16px rgb(69 54 36 / 8%);
+      font-family: "Noto Sans Thai", "IBM Plex Sans Thai", "Leelawadee UI", Tahoma, system-ui, sans-serif;
+      color-scheme: light;
+      --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-main); }
+
+    html[data-theme="meadow"] {
+      --bg: #dfe8da;
+      --chrome: #d4e0ce;
+      --surface: #fbfaf1;
+      --field: #edf1e5;
+      --text: #26332a;
+      --muted: #6b796d;
+      --accent: #487658;
+      --accent-2: #d69953;
+      --line: #cbd6c5;
+      --radius: 30px;
+      --shadow: 0 24px 70px rgb(38 65 43 / 18%);
+      --soft-shadow: 0 5px 16px rgb(38 65 43 / 8%);
+    }
+
+    html[data-theme="soda"] {
+      --bg: #d9e6f7;
+      --chrome: #cddcf1;
+      --surface: #fff9f1;
+      --field: #f1ecf8;
+      --text: #29273d;
+      --muted: #777289;
+      --accent: #7458c7;
+      --accent-2: #ed7e93;
+      --line: #d7d2e2;
+      --radius: 34px;
+      --shadow: 0 24px 70px rgb(59 65 116 / 19%);
+      --soft-shadow: 0 5px 16px rgb(59 65 116 / 8%);
+    }
+
+    html[data-theme="zine"] {
+      --bg: #d7d5cc;
+      --chrome: #f0ead8;
+      --surface: #fffef3;
+      --field: #eee9dc;
+      --text: #181813;
+      --muted: #66645a;
+      --accent: #ef5638;
+      --accent-2: #edc33e;
+      --line: #181813;
+      --radius: 4px;
+      --shadow: 9px 9px 0 #181813;
+      --soft-shadow: 3px 3px 0 #181813;
+    }
+
+    html[data-theme="night"] {
+      --bg: #191b19;
+      --chrome: #232622;
+      --surface: #2c2f2a;
+      --field: #232622;
+      --text: #f1eee4;
+      --muted: #aaa99f;
+      --accent: #d6a66f;
+      --accent-2: #9bac91;
+      --line: #464a42;
+      --radius: 20px;
+      --shadow: 0 24px 70px rgb(0 0 0 / 38%);
+      --soft-shadow: 0 5px 18px rgb(0 0 0 / 18%);
+      color-scheme: dark;
+    }
+
     body {
-        background:
-            radial-gradient(ellipse 80% 55% at 50% -10%, rgba(99, 102, 241, 0.14), transparent 65%),
-            radial-gradient(ellipse 55% 40% at 88% 108%, rgba(56, 189, 248, 0.06), transparent 60%),
-            var(--bg-base);
-        color: var(--text-primary);
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      padding: 24px;
+      color: var(--text);
+      background: var(--bg);
+      transition: background .35s var(--ease-spring), color .35s var(--ease-spring);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    button, input, textarea, select { font: inherit; }
+    button, select { cursor: pointer; }
+    button { color: inherit; }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    .browser {
+      width: 100%;
+      max-width: 1360px;
+      min-height: calc(100vh - 48px);
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      transition: background .35s var(--ease-spring), border-radius .35s var(--ease-spring), box-shadow .35s var(--ease-spring);
+    }
+
+    /* Top Bar */
+    .tabbar {
+      min-height: 62px;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--chrome);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 850;
+      letter-spacing: -.5px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      color: var(--surface);
+      background: var(--accent);
+      border-radius: 11px 15px 10px 16px;
+      transform: rotate(-7deg);
+      font-size: 18px;
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 30%, transparent);
+      transition: transform .3s var(--ease-spring);
+    }
+    .brand:hover .brand-mark {
+      transform: rotate(12deg) scale(1.08);
+    }
+
+    html[data-theme="soda"] .brand-mark {
+      border-radius: 50% 38% 52% 42%;
+      transform: rotate(10deg);
+    }
+
+    html[data-theme="zine"] .brand-mark {
+      color: var(--text);
+      background: var(--accent-2);
+      border: 2px solid var(--text);
+      border-radius: 0;
+      box-shadow: 2px 2px 0 var(--text);
+    }
+
+    .brand-title {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+    .brand-title span:first-child {
+      font-size: 18px;
+      font-weight: 900;
+    }
+    .brand-title span:last-child {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .theme-control {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .theme-control select {
+      max-width: 165px;
+      padding: 7px 12px;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .theme-control select:hover {
+      border-color: var(--accent);
+    }
+
+    .shuffle {
+      min-height: 38px;
+      padding: 0 14px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: all .2s var(--ease-spring);
+    }
+
+    .shuffle:hover {
+      color: var(--surface);
+      background: var(--accent);
+      border-color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 30%, transparent);
+    }
+
+    html[data-theme="zine"] .shuffle {
+      border: 2px solid var(--text);
+      box-shadow: 3px 3px 0 var(--text);
+      border-radius: 0;
+    }
+    html[data-theme="zine"] .shuffle:hover {
+      color: var(--text);
+      background: var(--accent-2);
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0 var(--text);
+    }
+
+    /* Workspace */
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 66px minmax(0, 1fr);
+    }
+
+    .rail {
+      padding: 20px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-right: 1px solid var(--line);
+      background: color-mix(in srgb, var(--chrome) 40%, var(--surface));
+    }
+
+    .rail-group {
+      display: grid;
+      gap: 10px;
+    }
+
+    .rail-button {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      margin: auto;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 14px;
+      font-size: 18px;
+      transition: all .18s var(--ease-spring);
+    }
+
+    .rail-button:hover,
+    .rail-button.active {
+      color: var(--text);
+      background: var(--field);
+      border-color: var(--line);
+      transform: scale(1.05);
+    }
+
+    .rail-button.active {
+      box-shadow: inset 3px 0 0 var(--accent);
+      color: var(--accent);
+    }
+
+    html[data-theme="zine"] .rail-button {
+      border-radius: 0;
+    }
+    html[data-theme="zine"] .rail-button.active {
+      border: 2px solid var(--text);
+      background: var(--accent-2);
+      box-shadow: 2px 2px 0 var(--text);
+    }
+
+    /* Page Content */
+    .page {
+      overflow-y: auto;
+      padding: clamp(32px, 4.5vw, 56px);
+      background:
+        radial-gradient(circle at 95% 5%,
+          color-mix(in srgb, var(--accent-2) 14%, transparent),
+          transparent 28%);
+    }
+
+    .hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 25px;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      max-width: 850px;
+      margin: 0;
+      font-size: clamp(32px, 4.2vw, 58px);
+      line-height: 1.15;
+      letter-spacing: -.035em;
+      font-weight: 850;
+    }
+
+    .hero h1 span { color: var(--accent); }
+
+    .hero-description {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .stamp {
+      width: 120px;
+      height: 120px;
+      flex: 0 0 auto;
+      display: grid;
+      place-content: center;
+      text-align: center;
+      border: 1.5px dashed var(--accent);
+      border-radius: 50%;
+      transform: rotate(9deg);
+      transition: transform .3s ease;
+      cursor: default;
+    }
+    .stamp:hover {
+      transform: rotate(0deg) scale(1.05);
+    }
+
+    .stamp span {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .stamp strong {
+      color: var(--accent);
+      font-family: Georgia, serif;
+      font-size: 26px;
+      font-style: italic;
+    }
+
+    html[data-theme="zine"] .stamp {
+      color: var(--text);
+      background: var(--accent-2);
+      border: 2px solid var(--text);
+      border-radius: 0;
+      box-shadow: 5px 5px 0 var(--text);
+      transform: rotate(-5deg);
+    }
+
+    /* Big Search */
+    .big-search {
+      max-width: 900px;
+      min-height: 62px;
+      margin: 32px 0 36px;
+      padding: 7px 7px 7px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--field);
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) * .8);
+      box-shadow: var(--soft-shadow);
+      transition: all .2s ease;
+    }
+    .big-search:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent), var(--soft-shadow);
+    }
+
+    html[data-theme="zine"] .big-search {
+      border: 2px solid var(--text);
+      border-radius: 0;
+      box-shadow: 5px 5px 0 var(--text);
+    }
+
+    .big-search input {
+      flex: 1;
+      min-width: 0;
+      color: var(--text);
+      background: transparent;
+      border: 0;
+      outline: 0;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .big-search input::placeholder { color: var(--muted); }
+
+    .big-search button {
+      min-height: 48px;
+      padding: 0 24px;
+      color: var(--surface);
+      background: var(--accent);
+      border: 0;
+      border-radius: calc(var(--radius) * .6);
+      font-weight: 750;
+      font-size: 14px;
+      white-space: nowrap;
+      transition: all .2s var(--ease-spring);
+    }
+    .big-search button:hover {
+      transform: scale(1.02);
+      filter: brightness(1.08);
+    }
+
+    html[data-theme="zine"] .big-search button {
+      color: var(--text);
+      background: var(--accent-2);
+      border: 2px solid var(--text);
+      border-radius: 0;
+      box-shadow: 2px 2px 0 var(--text);
+    }
+
+    /* Shortcuts Section */
+    .section-heading {
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .text-button {
+      padding: 4px;
+      color: var(--muted);
+      background: transparent;
+      border: 0;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .text-button:hover { color: var(--accent); }
+
+    .shortcut-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .shortcut {
+      position: relative;
+      min-height: 120px;
+      padding: 16px;
+      color: var(--text);
+      text-decoration: none;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) * .7);
+      transition: transform .2s var(--ease-spring), box-shadow .2s ease, border-color .2s ease;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .shortcut:hover {
+      z-index: 1;
+      border-color: var(--accent);
+      box-shadow: var(--soft-shadow);
+      transform: translateY(-4px) rotate(-.4deg);
+    }
+
+    html[data-theme="zine"] .shortcut {
+      border: 2px solid var(--text);
+      border-radius: 0;
+      box-shadow: 4px 4px 0 var(--text);
+    }
+    html[data-theme="zine"] .shortcut:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0 var(--text);
+    }
+
+    .tile-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tile-icon {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      color: var(--accent);
+      background: var(--field);
+      border: 1px solid var(--line);
+      border-radius: 12px 16px 11px 15px;
+      font-weight: 850;
+      font-size: 18px;
+    }
+
+    .shortcut .arrow {
+      color: var(--muted);
+      font-size: 14px;
+      transition: transform .2s ease;
+    }
+    .shortcut:hover .arrow {
+      transform: translate(2px, -2px);
+      color: var(--accent);
+    }
+
+    .shortcut strong {
+      display: block;
+      font-size: 15px;
+      margin-top: 10px;
+      font-weight: 750;
+    }
+
+    .shortcut small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Bottom Grid */
+    .bottom-grid {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: 1.35fr .85fr;
+      gap: 16px;
+    }
+
+    .panel {
+      padding: 22px;
+      background: var(--field);
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) * .7);
+    }
+
+    html[data-theme="zine"] .panel {
+      border: 2px solid var(--text);
+      border-radius: 0;
+      box-shadow: 5px 5px 0 var(--text);
+    }
+
+    .panel h2 {
+      margin: 0 0 15px;
+      font-size: 16px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .recent-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .recent-item {
+      width: 100%;
+      padding: 11px 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      color: var(--text);
+      background: transparent;
+      border: 0;
+      border-top: 1px solid var(--line);
+      cursor: pointer;
+      font-size: 13px;
+      transition: color .15s ease;
+    }
+
+    .recent-item:first-child { border-top: 0; }
+    .recent-item:hover { color: var(--accent); }
+
+    .recent-item .dot {
+      width: 8px;
+      height: 8px;
+      flex: 0 0 auto;
+      background: var(--accent-2);
+      border-radius: 50%;
+    }
+
+    .recent-title {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 500;
+    }
+
+    .recent-item small {
+      color: var(--muted);
+      white-space: nowrap;
+      font-size: 11px;
+    }
+
+    /* Sticky Note Panel */
+    .note-panel {
+      background: color-mix(in srgb, var(--accent-2) 16%, var(--surface));
+      transform: rotate(.5deg);
+      display: flex;
+      flex-direction: column;
+    }
+
+    html[data-theme="zine"] .note-panel {
+      transform: none;
+    }
+
+    .note-panel textarea {
+      width: 100%;
+      flex: 1;
+      min-height: 130px;
+      padding: 0;
+      resize: vertical;
+      color: var(--text);
+      background: transparent;
+      border: 0;
+      outline: 0;
+      line-height: 1.8;
+      font-size: 13.5px;
+    }
+    .note-panel textarea::placeholder {
+      color: var(--muted);
+      opacity: 0.7;
+    }
+
+    .save-status {
+      min-height: 18px;
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    footer {
+      margin-top: 32px;
+      color: var(--muted);
+      font-size: 11.5px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 28px;
+      z-index: 100;
+      padding: 10px 18px;
+      color: var(--surface);
+      background: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 15px);
+      transition: all .25s var(--ease-spring);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    @media (max-width: 960px) {
+      .shortcut-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .bottom-grid { grid-template-columns: 1fr; }
+      .stamp { display: none; }
+    }
+
+    @media (max-width: 640px) {
+      body { padding: 0; }
+      .browser {
         min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 40px 20px;
-        overflow-x: hidden;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      .workspace { grid-template-columns: 1fr; }
+      .rail { display: none; }
+      .page { padding: 24px 18px; }
+      .hero h1 { font-size: clamp(30px, 10vw, 44px); }
+      .shortcut-grid { grid-template-columns: 1fr; }
+      .note-panel { transform: none; }
     }
-    /* Film grain จางๆ เดียวกับเชลล์หลัก */
-    body::before {
-        content: '';
-        position: fixed;
-        inset: 0;
-        z-index: 0;
-        pointer-events: none;
-        opacity: 0.025;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
-    }
-    body > * { position: relative; z-index: 1; }
-    .logo-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 18px;
-        position: relative;
-    }
-    .logo-img {
-        width: 72px;
-        height: 72px;
-        border-radius: var(--radius-lg);
-        object-fit: cover;
-        box-shadow: 0 8px 26px var(--accent-glow), 0 0 40px rgba(99, 102, 241, 0.12);
-        transition: transform 0.35s var(--ease-spring);
-    }
-    .logo-img:hover {
-        transform: scale(1.06) rotate(-2deg);
-    }
-    /* นาฬิกา + คำทักทาย + วันที่ */
-    .clock {
-        font-family: var(--font-mono);
-        font-size: 54px;
-        font-weight: 700;
-        letter-spacing: 1px;
-        line-height: 1;
-        background: linear-gradient(135deg, #ffffff 0%, #c7d2fe 60%, #a5b4fc 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 10px;
-    }
-    .greet {
-        font-size: 17px;
-        font-weight: 600;
-        margin-bottom: 4px;
-    }
-    .date-line {
-        font-size: 12.5px;
-        color: var(--text-muted);
-        letter-spacing: 0.3px;
-        margin-bottom: 34px;
-    }
-    .search-box {
-        width: 100%;
-        max-width: 620px;
-        position: relative;
-        margin-bottom: 40px;
-    }
-    .search-input {
-        width: 100%;
-        height: 54px;
-        background: rgba(16, 16, 24, 0.72);
-        border: 1px solid var(--border-strong);
-        border-radius: 999px;
-        padding: 0 24px 0 52px;
-        font-size: 14.5px;
-        color: var(--text-primary);
-        outline: none;
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
-        transition: all 0.22s var(--ease-spring);
-    }
-    .search-input:focus {
-        border-color: var(--accent-bright);
-        box-shadow: 0 0 0 3px var(--accent-glow), 0 12px 32px rgba(0, 0, 0, 0.5);
-    }
-    .search-input::placeholder { color: var(--text-muted); }
-    .search-icon {
-        position: absolute;
-        left: 20px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-muted);
-        display: flex;
-    }
-    .speed-dial {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 16px;
-        justify-content: center;
-        max-width: 720px;
-    }
-    .card {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        width: 96px;
-        height: 98px;
-        background: rgba(255, 255, 255, 0.025);
-        border: 1px solid var(--border-soft);
-        border-radius: var(--radius-lg);
-        text-decoration: none;
-        color: var(--text-secondary);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        transition: all 0.22s var(--ease-spring);
-        cursor: pointer;
-        padding: 10px;
-        gap: 9px;
-    }
-    .card:hover {
-        transform: translateY(-4px);
-        background: rgba(255, 255, 255, 0.05);
-        border-color: var(--accent-bright);
-        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45), 0 0 18px var(--accent-glow);
-        color: var(--text-primary);
-    }
-    .card:active { transform: translateY(-1px) scale(0.97); }
-    .card-icon {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: var(--radius-md);
-        margin-bottom: 0;
-        background: rgba(255, 255, 255, 0.04);
-        transition: transform 0.2s var(--ease-spring);
-    }
-    .card:hover .card-icon { transform: scale(1.1); }
-    .card-title {
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--text-secondary);
-        letter-spacing: 0.2px;
-    }
-    @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after { animation: none !important; transition: none !important; }
-    }
-</style>
+  </style>
 </head>
+
 <body>
-    
-    <div class="logo-container">
-        <img class="logo-img" src="data:image/png;base64,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" alt="Nova Logo" />
+  <div class="browser">
+    <!-- Top Header Bar -->
+    <header class="tabbar">
+      <div class="brand" onclick="goHome()" title="Nova Studio Home">
+        <span class="brand-mark" aria-hidden="true">✳</span>
+        <div class="brand-title">
+          <span>sala.</span>
+          <span>NOVA SPATIAL</span>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <label class="theme-control">
+          <span>สไตล์:</span>
+          <select id="themeSelect" onchange="changeTheme(this.value)" aria-label="เลือกสไตล์">
+            <option value="paper">Paper · กระดาษคราฟท์</option>
+            <option value="meadow">Meadow · สวนเขียว</option>
+            <option value="soda">Soda · สดใสพาสเทล</option>
+            <option value="zine">Zine · สิ่งพิมพ์จัดจ้าน</option>
+            <option value="night">Night · โคมไฟอุ่น</option>
+          </select>
+        </label>
+
+        <button class="shuffle" id="shuffleTheme" onclick="shuffleTheme()" title="สลับสไตล์แบบสุ่ม">
+          ✦ <span>สุ่มลุค</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Workspace -->
+    <div class="workspace">
+      <!-- Left Rail Navigation -->
+      <nav class="rail" aria-label="เมนูเบราว์เซอร์">
+        <div class="rail-group">
+          <button class="rail-button active" onclick="goHome()" title="หน้าแรก" aria-label="หน้าแรก">⌂</button>
+          <button class="rail-button" onclick="sendAction('ToggleSidePanel')" title="ประวัติและรายการโปรด (Bookmarks & History)" aria-label="ประวัติและบุ๊กมาร์ก">☆</button>
+          <button class="rail-button" onclick="sendAction('ToggleReaderMode')" title="โหมดอ่านบทความสบายตา (Reader Mode)" aria-label="อ่านบทความ">▤</button>
+          <button class="rail-button" onclick="sendAction('ToggleSidePanel')" title="การดาวน์โหลด (Downloads)" aria-label="ดาวน์โหลด">↓</button>
+        </div>
+
+        <div class="rail-group">
+          <button class="rail-button" onclick="sendAction('ToggleVerticalTabs')" title="สลับโหมดแท็บแนวตั้ง (Vertical Tabs)" aria-label="แท็บแนวตั้ง">📑</button>
+          <button class="rail-button" onclick="openSpotlight()" title="Spotlight Command Palette (Ctrl+K)" aria-label="Spotlight">⌘</button>
+        </div>
+      </nav>
+
+      <!-- Main Page Content -->
+      <main class="page">
+        <!-- Hero Section -->
+        <section class="hero">
+          <div>
+            <p class="eyebrow" id="dateLabel">วันจันทร์ที่ 9 พฤศจิกายน 2569</p>
+            <h1><span id="greeting">สวัสดี</span><br />วันนี้อยากไปไหนดี?</h1>
+            <p class="hero-description">
+              ไม่ต้องรีบก็ได้ เลือกทางลัด จดอะไรเล็กๆ หรือปล่อยให้เป็นวันที่สงบ
+            </p>
+          </div>
+
+          <div class="stamp" aria-hidden="true" title="Take it slow • Nova Studio">
+            <span>take it</span>
+            <strong>slow.</strong>
+          </div>
+        </section>
+
+        <!-- Big Search Form -->
+        <form class="big-search" id="homeSearch" onsubmit="handleSearch(event)">
+          <span style="font-size:20px;color:var(--muted);" aria-hidden="true">⌕</span>
+          <input
+            id="homeQuery"
+            type="search"
+            placeholder="ค้นหาบน Google หรือพิมพ์ที่อยู่ URL แล้วกด Enter..."
+            aria-label="ค้นหาจากหน้าแรก"
+            autofocus
+          />
+          <button type="submit">ค้นหา ↗</button>
+        </form>
+
+        <!-- Shortcuts Section -->
+        <section>
+          <div class="section-heading">
+            <h2>ทางลัดของคุณ</h2>
+            <button class="text-button" onclick="showToast('💡 คุณสามารถพิมพ์ค้นหาหรือ URL ในช่องค้นหาได้ทันที')">
+              ✦ คัดสรรเพื่อคุณ
+            </button>
+          </div>
+
+          <div class="shortcut-grid">
+            <div class="shortcut" onclick="go('https://www.google.com')">
+              <div class="tile-header">
+                <div class="tile-icon">G</div>
+                <span class="arrow">↗</span>
+              </div>
+              <div>
+                <strong>Google</strong>
+                <small>ค้นหาข้อมูล ข่าวสาร และทุกสิ่ง</small>
+              </div>
+            </div>
+
+            <div class="shortcut" onclick="go('https://www.youtube.com')">
+              <div class="tile-header">
+                <div class="tile-icon" style="color:#ef4444;">▶</div>
+                <span class="arrow">↗</span>
+              </div>
+              <div>
+                <strong>YouTube</strong>
+                <small>ชมวิดีโอ สตรีมสด และเพลงโปรด</small>
+              </div>
+            </div>
+
+            <div class="shortcut" onclick="go('https://github.com')">
+              <div class="tile-header">
+                <div class="tile-icon" style="color:var(--text);">⌘</div>
+                <span class="arrow">↗</span>
+              </div>
+              <div>
+                <strong>GitHub</strong>
+                <small>คลังโค้ดและโปรเจกต์โอเพนซอร์ส</small>
+              </div>
+            </div>
+
+            <div class="shortcut" onclick="go('https://chatgpt.com')">
+              <div class="tile-header">
+                <div class="tile-icon" style="color:#10b981;">✦</div>
+                <span class="arrow">↗</span>
+              </div>
+              <div>
+                <strong>ChatGPT</strong>
+                <small>คู่หูปัญญาประดิษฐ์ช่วยงานและเรียนรู้</small>
+              </div>
+            </div>
+
+            <div class="shortcut" onclick="go('https://th.wikipedia.org')">
+              <div class="tile-header">
+                <div class="tile-icon">W</div>
+                <span class="arrow">↗</span>
+              </div>
+              <div>
+                <strong>Wikipedia</strong>
+                <small>สารานุกรมเสรีภาษาไทย</small>
+              </div>
+            </div>
+
+            <div class="shortcut" onclick="go('https://www.reddit.com')">
+              <div class="tile-header">
+                <div class="tile-icon" style="color:#f97316;">●</div>
+                <span class="arrow">↗</span>
+              </div>
+              <div>
+                <strong>Reddit</strong>
+                <small>ชุมชนสนทนาและกระทู้ทั่วโลก</small>
+              </div>
+            </div>
+
+            <div class="shortcut" onclick="go('https://x.com')">
+              <div class="tile-header">
+                <div class="tile-icon">𝕏</div>
+                <span class="arrow">↗</span>
+              </div>
+              <div>
+                <strong>X (Twitter)</strong>
+                <small>เกาะติดเทรนด์และข่าวสารเรียลไทม์</small>
+              </div>
+            </div>
+
+            <div class="shortcut" onclick="go('https://www.facebook.com')">
+              <div class="tile-header">
+                <div class="tile-icon" style="color:#3b82f6;">f</div>
+                <span class="arrow">↗</span>
+              </div>
+              <div>
+                <strong>Facebook</strong>
+                <small>เชื่อมต่อกับเพื่อนและกลุ่มสังคม</small>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Bottom Grid: Recent Activity & Sticky Note -->
+        <div class="bottom-grid">
+          <!-- Recent Activity Panel -->
+          <div class="panel">
+            <h2>
+              <span>🕒 แหล่งเรียนรู้และเครื่องมือแนะนำ</span>
+              <button class="text-button" onclick="sendAction('ToggleSidePanel')">ดูประวัติทั้งหมด →</button>
+            </h2>
+            <div class="recent-list">
+              <div class="recent-item" onclick="go('https://doc.rust-lang.org/book/')">
+                <span class="dot"></span>
+                <span class="recent-title">The Rust Programming Language — คัมภีร์ทางการของภาษา Rust</span>
+                <small>rust-lang.org</small>
+              </div>
+              <div class="recent-item" onclick="go('https://developer.mozilla.org')">
+                <span class="dot"></span>
+                <span class="recent-title">MDN Web Docs — เอกสารและมาตรฐานการพัฒนาเว็บระดับโลก</span>
+                <small>mozilla.org</small>
+              </div>
+              <div class="recent-item" onclick="go('https://threejs.org')">
+                <span class="dot"></span>
+                <span class="recent-title">Three.js — กราฟิกและ 3D WebGL Canvas ตัวอย่างระดับมาสเตอร์</span>
+                <small>threejs.org</small>
+              </div>
+              <div class="recent-item" onclick="go('https://github.com/moo-krub/nova-studio')">
+                <span class="dot"></span>
+                <span class="recent-title">Nova Studio Repository — ร่วมติดตามการอัปเดตและปล่อยเวอร์ชันใหม่</span>
+                <small>github.com</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sticky Note Panel -->
+          <div class="panel note-panel">
+            <h2>
+              <span>📝 โน้ตด่วนของคุณ</span>
+              <span style="font-size:11px;font-weight:600;color:var(--muted);">บันทึกออโต้</span>
+            </h2>
+            <textarea
+              id="stickyNote"
+              placeholder="พิมพ์บันทึกความคิด ไอเดีย หรือสิ่งที่ต้องทำวันนี้ที่นี่... ระบบจะบันทึกให้อัตโนมัติ"
+              oninput="saveNote(this.value)"
+            ></textarea>
+            <div class="save-status">
+              <span id="noteStatus">พร้อมจดบันทึก</span>
+              <span style="font-size:10px;">💾 ซิงค์กับระบบ Nova</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+          <span>Nova Studio • Sala Spatial Edition (v6.1.0)</span>
+          <span>•</span>
+          <span>Engineered in Rust & WebView2</span>
+        </footer>
+      </main>
     </div>
+  </div>
 
-    <div id="greet" class="greet">สวัสดี</div>
-    <div id="clock" class="clock">--:--</div>
-    <div id="dateLine" class="date-line">—</div>
-    
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
 
-    <div class="search-box">
-        <span class="search-icon">
-            <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
-        </span>
-        <input class="search-input" id="searchInp" placeholder="ค้นหาบนเว็บ หรือพิมพ์ URL แล้วกด Enter..." onkeydown="if(event.key==='Enter') searchWeb()" autofocus />
-    </div>
+  <script>
+    const THEMES = ['paper', 'meadow', 'soda', 'zine', 'night'];
 
-    <div class="speed-dial">
-        <div class="card" onclick="go('https://www.google.com')">
-            <div class="card-icon" style="box-shadow: 0 0 15px rgba(66, 133, 244, 0.2);">
-                <svg viewBox="0 0 24 24" width="28" height="28"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-            </div>
-            <span class="card-title">Google</span>
-        </div>
+    // IPC Sender helper
+    function send(payload) {
+      if (window.ipc && typeof window.ipc.postMessage === 'function') {
+        window.ipc.postMessage(JSON.stringify(payload));
+      } else {
+        console.log('IPC simulated:', payload);
+      }
+    }
 
-        <div class="card" onclick="go('https://www.youtube.com')">
-            <div class="card-icon" style="box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);">
-                <svg viewBox="0 0 24 24" width="28" height="28"><path fill="#FF0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/><path fill="#FFFFFF" d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-            </div>
-            <span class="card-title">YouTube</span>
-        </div>
+    function go(url) {
+      if (!url) return;
+      send({ cmd: 'Navigate', url: url });
+    }
 
-        <div class="card" onclick="go('https://github.com')">
-            <div class="card-icon" style="box-shadow: 0 0 15px rgba(255, 255, 255, 0.15);">
-                <svg viewBox="0 0 24 24" width="28" height="28"><path fill="#FFFFFF" d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-            </div>
-            <span class="card-title">GitHub</span>
-        </div>
+    function goHome() {
+      showToast('🌿 ยินดีต้อนรับสู่พื้นที่สงบ Sala');
+    }
 
-        <div class="card" onclick="go('https://chatgpt.com')">
-            <div class="card-icon" style="box-shadow: 0 0 15px rgba(16, 163, 127, 0.25);">
-                <svg viewBox="0 0 24 24" width="28" height="28"><path fill="#10A37F" d="M22.28 9.38a5.985 5.985 0 0 0-.52-4.91 6.05 6.05 0 0 0-6.51-2.9 6.065 6.065 0 0 0-4.63-2.07 6.015 6.015 0 0 0-5.74 4.18 5.99 5.99 0 0 0-3.96 2.88 6.05 6.05 0 0 0 .74 7.1 5.98 5.98 0 0 0 .51 4.91 6.05 6.05 0 0 0 6.52 2.9 5.98 5.98 0 0 0 4.62 2.07 6.014 6.014 0 0 0 5.75-4.18 5.99 5.99 0 0 0 3.95-2.88 6.046 6.046 0 0 0-.73-7.1zm-8.87 11.45a4.5 4.5 0 0 1-2.87-.92l.14-.08 4.78-2.76a.78.78 0 0 0 .39-.68v-6.75l2.02 1.17v6.2a4.53 4.53 0 0 1-4.46 3.82zm-8.08-3.48a4.52 4.52 0 0 1-.61-2.96c.03.1.07.21.11.31l2.39 4.14a.78.78 0 0 0 .68.39h6.75l-2.02-1.17H6.46a4.53 4.53 0 0 1-1.13-.71zm-1.07-8.85c.34-.58.8-1.07 1.35-1.43l-.06.14v5.52a.79.79 0 0 0 .39.68l5.85 3.38-2.02 1.17-5.38-3.11a4.53 4.53 0 0 1-.13-6.35zm13.1 3.23-5.85-3.38 2.02-1.17 5.37 3.1a4.53 4.53 0 0 1 .14 6.36 4.5 4.5 0 0 1-1.35 1.43v-5.66a.79.79 0 0 0-.33-.68zm3.03-2.14a4.54 4.54 0 0 1 .6 2.96 4.45 4.45 0 0 1-.1.22l-2.4-4.15a.77.77 0 0 0-.68-.39H11.5l2.02-1.17h6.18c.45.45.82 1 1.08 1.61.26.61.37 1.27.32 1.92zm-8.52 3.89 2.76 1.6v3.19l-2.76-1.59zm-4.78-2.76 2.76-1.6 2.76 1.6-2.76 1.59z"/></svg>
-            </div>
-            <span class="card-title">ChatGPT</span>
-        </div>
+    function handleSearch(e) {
+      e.preventDefault();
+      const val = document.getElementById('homeQuery').value.trim();
+      if (val) {
+        go(val);
+      }
+    }
 
-        <div class="card" onclick="go('https://www.rust-lang.org')">
-            <div class="card-icon" style="box-shadow: 0 0 15px rgba(206, 65, 43, 0.25);">
-                <svg viewBox="0 0 24 24" width="28" height="28"><path fill="#CE412B" d="M23.834 11.233a3.52 3.52 0 0 0-.462-.777 3.58 3.58 0 0 0-.712-.662l.024-.13a1.95 1.95 0 0 0-.422-1.621 1.96 1.96 0 0 0-1.558-.698l-.133.01a3.58 3.58 0 0 0-.877-.417 3.54 3.54 0 0 0-.962-.164v-.129a1.96 1.96 0 0 0-.915-1.42 1.96 1.96 0 0 0-1.7-.132l-.112.067a3.58 3.58 0 0 0-1.127-.14 3.55 3.55 0 0 0-1.077.258l-.078-.104a1.96 1.96 0 0 0-1.328-1.045 1.95 1.95 0 0 0-1.674.45l-.083.1a3.58 3.58 0 0 0-1.192.42 3.54 3.54 0 0 0-.85.748l-.127-.03a1.96 1.96 0 0 0-1.6.49 1.95 1.95 0 0 0-.585 1.572l.013.13a3.55 3.55 0 0 0-.742.63 3.57 3.57 0 0 0-.503.852l-.13-.016a1.96 1.96 0 0 0-1.68.784 1.96 1.96 0 0 0-.25 1.688l.063.115a3.57 3.57 0 0 0-.27 1.124 3.54 3.54 0 0 0 .11 1.134l-.105.076a1.96 1.96 0 0 0-.757 1.516 1.95 1.95 0 0 0 .75 1.52l.107.074a3.57 3.57 0 0 0 .285 1.12 3.55 3.55 0 0 0 .615.98l-.061.116a1.96 1.96 0 0 0 .262 1.685 1.96 1.96 0 0 0 1.676.772l.13-.017a3.57 3.57 0 0 0 .52.84 3.55 3.55 0 0 0 .757.616l-.014.13a1.96 1.96 0 0 0 .6 1.565 1.95 1.95 0 0 0 1.597.478l.126-.032a3.57 3.57 0 0 0 .866.732 3.55 3.55 0 0 0 1.184.404l.084.1a1.96 1.96 0 0 0 1.684.437 1.96 1.96 0 0 0 1.314-1.062l.078-.104a3.56 3.56 0 0 0 1.08.243 3.57 3.57 0 0 0 1.123-.153l.113.068a1.96 1.96 0 0 0 1.706-.145 1.96 1.96 0 0 0 .899-1.43l.001-.13a3.56 3.56 0 0 0 .964-.179 3.58 3.58 0 0 0 .863-.432l.134.01a1.96 1.96 0 0 0 1.554-.712 1.96 1.96 0 0 0 .408-1.624l-.025-.13a3.56 3.56 0 0 0 .696-.677 3.57 3.57 0 0 0 .445-.79l.13.013a1.96 1.96 0 0 0 1.642-.862 1.95 1.95 0 0 0 .157-1.7l-.066-.112a3.57 3.57 0 0 0 .245-1.134 3.54 3.54 0 0 0-.13-1.132l.103-.078a1.96 1.96 0 0 0 .736-1.528 1.96 1.96 0 0 0-.77-1.51l-.105-.075zM12 16.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z"/></svg>
-            </div>
-            <span class="card-title">Rust</span>
-        </div>
+    function sendAction(cmd) {
+      send({ cmd: cmd });
+    }
 
-        <div class="card" onclick="go('https://th.wikipedia.org')">
-            <div class="card-icon" style="box-shadow: 0 0 15px rgba(220, 220, 220, 0.2);">
-                <svg viewBox="0 0 24 24" width="28" height="28"><path fill="#E0E0E0" d="M12.09 13.21 9.4 6.84H7.29L3.5 17.16h1.72l.84-2.42h4.09l.86 2.42h1.78l1.3-3.95zm-5.32 0 1.48-4.27 1.48 4.27zm10.74-6.37h-2.12l-2.68 6.37 1.3 3.95 1.3-3.95 1.48-4.27 1.48 4.27.84 2.42h1.72l-3.32-8.79zm-2.12 7.7-1.48-4.27 1.48 4.27z"/></svg>
-            </div>
-            <span class="card-title">Wikipedia</span>
-        </div>
+    function openSpotlight() {
+      send({ cmd: 'OpenCommandPalette' });
+    }
 
-        <div class="card" onclick="go('https://x.com')">
-            <div class="card-icon" style="box-shadow: 0 0 15px rgba(255, 255, 255, 0.15);">
-                <svg viewBox="0 0 24 24" width="28" height="28"><path fill="#FFFFFF" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            </div>
-            <span class="card-title">X</span>
-        </div>
-    </div>
+    // Theme Engine
+    function applyTheme(theme) {
+      if (!THEMES.includes(theme)) theme = 'paper';
+      document.documentElement.setAttribute('data-theme', theme);
+      document.getElementById('themeSelect').value = theme;
+      localStorage.setItem('nova_sala_theme', theme);
 
-    <script>
-        function go(url) {
-            if (window.ipc) window.ipc.postMessage(JSON.stringify({ cmd: 'Navigate', url: url }));
-            else window.location.href = url;
-        }
-        function searchWeb() {
-            const val = document.getElementById('searchInp').value.trim();
-            if (val) go(val);
-        }
-        // นาฬิกา + คำทักทายตามเวลา + วันที่ไทย
-        function greeting() {
-            const h = new Date().getHours();
-            if (h < 12) return 'สวัสดีตอนเช้า';
-            if (h < 16) return 'สวัสดีตอนสาย';
-            if (h < 20) return 'สวัสดีตอนเย็น';
-            return 'สวัสดีตอนกลางคืน';
-        }
-        function tickClock() {
-            const now = new Date();
-            document.getElementById('clock').textContent = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-            document.getElementById('greet').textContent = greeting();
-            document.getElementById('dateLine').textContent = now.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long' });
-        }
-        tickClock();
-        setInterval(tickClock, 10000);
-    </script>
+      // Meta theme-color for browser chrome
+      const colors = {
+        paper: '#eee8dc',
+        meadow: '#dfe8da',
+        soda: '#d9e6f7',
+        zine: '#d7d5cc',
+        night: '#191b19'
+      };
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta && colors[theme]) meta.setAttribute('content', colors[theme]);
+
+      // Inform Nova Studio shell
+      send({ cmd: 'SetTheme', theme: theme });
+    }
+
+    function changeTheme(theme) {
+      applyTheme(theme);
+      showToast('🎨 สลับสไตล์เป็น ' + theme.toUpperCase());
+    }
+
+    function shuffleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'paper';
+      const available = THEMES.filter(t => t !== current);
+      const next = available[Math.floor(Math.random() * available.length)];
+      applyTheme(next);
+      showToast('✦ สุ่มลุคใหม่: ' + next.toUpperCase());
+    }
+
+    // Sticky Note Autosave
+    let noteTimer = null;
+    function saveNote(val) {
+      document.getElementById('noteStatus').textContent = 'กำลังพิมพ์...';
+      clearTimeout(noteTimer);
+      noteTimer = setTimeout(() => {
+        localStorage.setItem('nova_sala_note', val);
+        send({ cmd: 'SaveNotes', notes: val });
+        document.getElementById('noteStatus').textContent = '✓ บันทึกเรียบร้อยแล้ว';
+      }, 400);
+    }
+
+    function loadSavedNote() {
+      const note = localStorage.getItem('nova_sala_note');
+      if (note !== null) {
+        document.getElementById('stickyNote').value = note;
+      }
+    }
+
+    // Greeting & Date Line
+    function updateDateAndGreeting() {
+      const now = new Date();
+      const h = now.getHours();
+      let greetText = 'สวัสดี';
+      if (h >= 5 && h < 12) greetText = 'สวัสดีตอนเช้า';
+      else if (h >= 12 && h < 16) greetText = 'สวัสดีตอนบ่าย';
+      else if (h >= 16 && h < 20) greetText = 'สวัสดีตอนเย็น';
+      else greetText = 'สวัสดีตอนค่ำ';
+
+      document.getElementById('greeting').textContent = greetText;
+
+      const dateStr = now.toLocaleDateString('th-TH', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+      document.getElementById('dateLabel').textContent = dateStr;
+    }
+
+    // Toast Engine
+    let toastTimeout = null;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        t.classList.remove('show');
+      }, 2400);
+    }
+
+    // Initialization
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('nova_sala_theme') || 'paper';
+      applyTheme(savedTheme);
+      updateDateAndGreeting();
+      loadSavedNote();
+    });
+  </script>
 </body>
 </html>

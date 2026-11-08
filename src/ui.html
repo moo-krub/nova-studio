@@ -70,6 +70,107 @@
         --tab-active-bg: #200b16;
     }
 
+    
+    body.theme-paper {
+        --bg-base: #eee8dc;
+        --bg-surface: #e6ddcf;
+        --bg-elevated: #fffdf7;
+        --bg-glass: rgba(244, 238, 228, 0.92);
+        --bg-omnibox: #f4eee4;
+        --accent: #df684a;
+        --accent-bright: #e27d60;
+        --accent-glow: rgba(223, 104, 74, 0.28);
+        --accent-subtle: rgba(223, 104, 74, 0.12);
+        --border: #ddd4c6;
+        --border-highlight: #cfc2af;
+        --border-subtle: rgba(0, 0, 0, 0.08);
+        --text-primary: #292722;
+        --text-secondary: #7b756c;
+        --text-muted: #9e968a;
+        --tab-inactive: #7b756c;
+        --tab-active-bg: #fffdf7;
+    }
+
+    body.theme-meadow {
+        --bg-base: #dfe8da;
+        --bg-surface: #d4e0ce;
+        --bg-elevated: #fbfaf1;
+        --bg-glass: rgba(237, 241, 229, 0.92);
+        --bg-omnibox: #edf1e5;
+        --accent: #487658;
+        --accent-bright: #5d926f;
+        --accent-glow: rgba(72, 118, 88, 0.28);
+        --accent-subtle: rgba(72, 118, 88, 0.12);
+        --border: #cbd6c5;
+        --border-highlight: #b7c7b0;
+        --border-subtle: rgba(0, 0, 0, 0.08);
+        --text-primary: #26332a;
+        --text-secondary: #6b796d;
+        --text-muted: #8a998c;
+        --tab-inactive: #6b796d;
+        --tab-active-bg: #fbfaf1;
+    }
+
+    body.theme-soda {
+        --bg-base: #d9e6f7;
+        --bg-surface: #cddcf1;
+        --bg-elevated: #fff9f1;
+        --bg-glass: rgba(241, 236, 248, 0.92);
+        --bg-omnibox: #f1ecf8;
+        --accent: #7458c7;
+        --accent-bright: #8c72de;
+        --accent-glow: rgba(116, 88, 199, 0.28);
+        --accent-subtle: rgba(116, 88, 199, 0.12);
+        --border: #d7d2e2;
+        --border-highlight: #c1b9d1;
+        --border-subtle: rgba(0, 0, 0, 0.08);
+        --text-primary: #29273d;
+        --text-secondary: #777289;
+        --text-muted: #9791a8;
+        --tab-inactive: #777289;
+        --tab-active-bg: #fff9f1;
+    }
+
+    body.theme-zine {
+        --bg-base: #d7d5cc;
+        --bg-surface: #f0ead8;
+        --bg-elevated: #fffef3;
+        --bg-glass: #eee9dc;
+        --bg-omnibox: #eee9dc;
+        --accent: #ef5638;
+        --accent-bright: #ff684a;
+        --accent-glow: rgba(239, 86, 56, 0.35);
+        --accent-subtle: rgba(239, 86, 56, 0.15);
+        --border: #181813;
+        --border-highlight: #181813;
+        --border-subtle: #181813;
+        --text-primary: #181813;
+        --text-secondary: #66645a;
+        --text-muted: #858274;
+        --tab-inactive: #66645a;
+        --tab-active-bg: #fffef3;
+    }
+
+    body.theme-night {
+        --bg-base: #191b19;
+        --bg-surface: #232622;
+        --bg-elevated: #2c2f2a;
+        --bg-glass: rgba(35, 38, 34, 0.88);
+        --bg-omnibox: #232622;
+        --accent: #d6a66f;
+        --accent-bright: #e5b985;
+        --accent-glow: rgba(214, 166, 111, 0.25);
+        --accent-subtle: rgba(214, 166, 111, 0.12);
+        --border: #464a42;
+        --border-highlight: #5a6055;
+        --border-subtle: rgba(255, 255, 255, 0.08);
+        --text-primary: #f1eee4;
+        --text-secondary: #aaa99f;
+        --text-muted: #797870;
+        --tab-inactive: #aaa99f;
+        --tab-active-bg: #2c2f2a;
+    }
+
     body.theme-matrix {
         --bg-base: #050c08;
         --bg-surface: #0a1710;
@@ -1422,7 +1523,7 @@
     <div id="novaToast" class="nova-toast"></div>
 
     <script>
-        const themes = ['aurora', 'gx', 'matrix'];
+        const themes = ['aurora', 'paper', 'meadow', 'soda', 'zine', 'night', 'gx', 'matrix'];
         let currentThemeIdx = 0;
 
         async function checkForUpdates(manual = true) {
@@ -1472,8 +1573,7 @@
         function CycleThemePreview() {
             currentThemeIdx = (currentThemeIdx + 1) % themes.length;
             const theme = themes[currentThemeIdx];
-            document.body.className = theme === 'gx' ? 'theme-gx' : (theme === 'matrix' ? 'theme-matrix' : '');
-            // บันทึกธีมลง backend ให้จำได้ตลอดไป (เดิมเปลี่ยนแค่บนหน้าจอ)
+            document.body.className = (theme && theme !== 'aurora') ? ('theme-' + theme) : '';
             send({ cmd: 'SetTheme', theme: theme });
             showToast('🎨 เปลี่ยนธีมเป็น: ' + theme.toUpperCase());
         }
@@ -1618,7 +1718,9 @@
         window.renderBrowserState = function(state) {
             window.__lastState = state;
             window.__lastTabs = state.tabs;
-            document.body.className = state.theme === 'gx' ? 'theme-gx' : (state.theme === 'matrix' ? 'theme-matrix' : '');
+            const th = state.theme || 'aurora';
+            if (themes.includes(th)) currentThemeIdx = themes.indexOf(th);
+            document.body.className = (th && th !== 'aurora') ? ('theme-' + th) : '';
 
             ['main', 'work', 'ai'].forEach(ws => {
                 const el = document.getElementById('ws-' + ws);

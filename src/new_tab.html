@@ -805,7 +805,7 @@
     }
 
     /* Organic, subtly asymmetric signature frames for Sala */
-    .icon-shell {
+        .icon-shell {
       width: 38px;
       height: 38px;
       display: grid;
@@ -813,45 +813,23 @@
       color: var(--muted);
       background: transparent;
       border: 1px solid transparent;
-      border-radius: 12px 16px 10px 15px;
-      transition: color .18s, background .18s, border-radius .2s, transform .2s, box-shadow .2s;
-    }
-
-    .rail-button {
-      width: 46px;
-      height: 46px;
-      padding: 3px;
-      background: transparent;
-      border: 0;
-      display: grid;
-      place-items: center;
-      margin: auto;
-      cursor: pointer;
-      border-radius: 14px;
+      border-radius: 10px;
+      transition: all .18s var(--ease-spring);
     }
 
     .rail-button:hover .icon-shell {
       color: var(--accent);
       background: var(--field);
       border-color: var(--line);
-      transform: translateY(-2px);
+      transform: translateY(-1px);
     }
 
     .rail-button.active .icon-shell {
       color: var(--surface);
       background: var(--accent);
       border-color: var(--accent);
-      transform: rotate(-4deg);
-      box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 24%, transparent);
-    }
-
-    html[data-theme="zine"] .icon-shell {
-      border-radius: 0;
-      box-shadow: 2px 2px 0 var(--text);
-    }
-
-    html[data-theme="soda"] .icon-shell {
-      border-radius: 50% 42% 48% 40%;
+      transform: none;
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 28%, transparent);
     }
 
     .brand-mark {
@@ -867,6 +845,306 @@
 
     .brand:hover .brand-mark {
       transform: rotate(18deg) scale(1.08);
+    }
+
+  
+    /* =========================================================================
+       REAL OFFICIAL BRAND LOGOS & INTERACTIVE SHORTCUT MANAGEMENT
+       ========================================================================= */
+    .count-badge {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 14%, transparent);
+      padding: 2px 8px;
+      border-radius: 99px;
+    }
+
+    .shortcut-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--surface);
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all .18s var(--ease-spring);
+    }
+    .action-btn:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 26%, transparent);
+    }
+
+    .action-btn.secondary {
+      color: var(--text);
+      background: var(--field);
+      border-color: var(--line);
+    }
+    .action-btn.secondary:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--surface);
+      box-shadow: none;
+    }
+
+    /* Shortcut Card with Delete Button */
+    .shortcut {
+      position: relative;
+      min-height: 74px;
+      padding: 10px 14px;
+      color: var(--text);
+      text-decoration: none;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      transition: transform .2s var(--ease-spring), box-shadow .2s ease, border-color .2s ease;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .shortcut:hover {
+      z-index: 2;
+      border-color: var(--accent);
+      box-shadow: var(--soft-shadow);
+      transform: translateY(-3px);
+    }
+
+    /* Delete Button (X) */
+    .delete-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--field);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all .16s ease;
+      z-index: 5;
+    }
+    .shortcut:hover .delete-btn {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .delete-btn:hover {
+      background: #ef4444;
+      border-color: #ef4444;
+      color: #ffffff;
+      transform: scale(1.15);
+    }
+
+    /* Real Brand Logo Container */
+    .brand-logo-wrap {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--field);
+      border: 1px solid var(--line);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .brand-logo-wrap svg {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+    .brand-logo-wrap img {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Quick-Add Card at end of grid */
+    .add-shortcut-card {
+      border: 1.5px dashed var(--line);
+      background: transparent;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 6px;
+    }
+    .add-shortcut-card:hover {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 6%, transparent);
+      border-style: solid;
+    }
+    .add-icon-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--field);
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      color: var(--accent);
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    /* Modal Backdrop & Card */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .22s ease;
+    }
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+      transform: translateY(12px) scale(0.96);
+      transition: transform .24s var(--ease-spring);
+    }
+    .modal-backdrop.open .modal-card {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+      background: var(--chrome);
+    }
+    .modal-header h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+    }
+    .modal-close {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: transparent;
+      border: 0;
+      font-size: 20px;
+      line-height: 1;
+      color: var(--muted);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+    .modal-close:hover {
+      background: var(--field);
+      color: var(--text);
+    }
+
+    .modal-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .modal-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .modal-field input {
+      padding: 10px 14px;
+      font-size: 14px;
+      background: var(--field);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--text);
+      outline: none;
+      transition: border-color .18s;
+    }
+    .modal-field input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+    .modal-tip {
+      font-size: 11.5px;
+      color: var(--muted);
+      line-height: 1.5;
+      background: var(--field);
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+    }
+
+    .modal-footer {
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      border-top: 1px solid var(--line);
+      background: var(--chrome);
+    }
+    .btn-cancel {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .btn-cancel:hover {
+      color: var(--text);
+      background: var(--field);
+    }
+    .btn-save {
+      padding: 8px 20px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--surface);
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 26%, transparent);
+    }
+    .btn-save:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
     }
 
   </style>
@@ -962,104 +1240,25 @@
           <button type="submit">ค้นหา ↗</button>
         </form>
 
-        <!-- Shortcuts Section -->
+        <!-- Shortcuts Section (Dynamic with Real Official Logos & Full CRUD) -->
         <section>
           <div class="section-heading">
-            <h2>ทางลัดของคุณ</h2>
-            <button class="text-button" onclick="showToast('💡 คุณสามารถพิมพ์ค้นหาหรือ URL ในช่องค้นหาได้ทันที')">
-              ✦ คัดสรรเพื่อคุณ
-            </button>
-          </div>
-
-          <div class="shortcut-grid">
-            <div class="shortcut" onclick="go('https://www.google.com')">
-              <div class="tile-header">
-                <div class="tile-icon">G</div>
-                <span class="arrow">↗</span>
-              </div>
-              <div>
-                <strong>Google</strong>
-                <small>ค้นหาข้อมูล ข่าวสาร และทุกสิ่ง</small>
-              </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <h2>ทางลัดของคุณ</h2>
+              <span id="shortcutCountBadge" class="count-badge">8 เว็บ</span>
             </div>
-
-            <div class="shortcut" onclick="go('https://www.youtube.com')">
-              <div class="tile-header">
-                <div class="tile-icon" style="color:#ef4444;">▶</div>
-                <span class="arrow">↗</span>
-              </div>
-              <div>
-                <strong>YouTube</strong>
-                <small>ชมวิดีโอ สตรีมสด และเพลงโปรด</small>
-              </div>
-            </div>
-
-            <div class="shortcut" onclick="go('https://github.com')">
-              <div class="tile-header">
-                <div class="tile-icon" style="color:var(--text);">⌘</div>
-                <span class="arrow">↗</span>
-              </div>
-              <div>
-                <strong>GitHub</strong>
-                <small>คลังโค้ดและโปรเจกต์โอเพนซอร์ส</small>
-              </div>
-            </div>
-
-            <div class="shortcut" onclick="go('https://chatgpt.com')">
-              <div class="tile-header">
-                <div class="tile-icon" style="color:#10b981;">✦</div>
-                <span class="arrow">↗</span>
-              </div>
-              <div>
-                <strong>ChatGPT</strong>
-                <small>คู่หูปัญญาประดิษฐ์ช่วยงานและเรียนรู้</small>
-              </div>
-            </div>
-
-            <div class="shortcut" onclick="go('https://th.wikipedia.org')">
-              <div class="tile-header">
-                <div class="tile-icon">W</div>
-                <span class="arrow">↗</span>
-              </div>
-              <div>
-                <strong>Wikipedia</strong>
-                <small>สารานุกรมเสรีภาษาไทย</small>
-              </div>
-            </div>
-
-            <div class="shortcut" onclick="go('https://www.reddit.com')">
-              <div class="tile-header">
-                <div class="tile-icon" style="color:#f97316;">●</div>
-                <span class="arrow">↗</span>
-              </div>
-              <div>
-                <strong>Reddit</strong>
-                <small>ชุมชนสนทนาและกระทู้ทั่วโลก</small>
-              </div>
-            </div>
-
-            <div class="shortcut" onclick="go('https://x.com')">
-              <div class="tile-header">
-                <div class="tile-icon">𝕏</div>
-                <span class="arrow">↗</span>
-              </div>
-              <div>
-                <strong>X (Twitter)</strong>
-                <small>เกาะติดเทรนด์และข่าวสารเรียลไทม์</small>
-              </div>
-            </div>
-
-            <div class="shortcut" onclick="go('https://www.facebook.com')">
-              <div class="tile-header">
-                <div class="tile-icon" style="color:#3b82f6;">f</div>
-                <span class="arrow">↗</span>
-              </div>
-              <div>
-                <strong>Facebook</strong>
-                <small>เชื่อมต่อกับเพื่อนและกลุ่มสังคม</small>
-              </div>
+            <div class="shortcut-toolbar">
+              <button class="action-btn" onclick="openAddShortcutModal()" title="เพิ่มทางลัดเว็บไซต์ที่คุณชื่นชอบ">
+                ＋ เพิ่มทางลัด
+              </button>
+              <button class="action-btn secondary" onclick="resetShortcuts()" title="คืนค่าทางลัดเว็บไซต์ยอดนิยมตั้งต้น">
+                ↺ คืนค่าเดิม
+              </button>
             </div>
           </div>
+
+          <!-- Dynamic reactive grid rendered via JS -->
+          <div id="shortcutGrid" class="shortcut-grid"></div>
         </section>
 
         <!-- Bottom Grid: Recent Activity & Sticky Note -->
@@ -1119,6 +1318,36 @@
           <span>Engineered in Rust & WebView2</span>
         </footer>
       </main>
+    </div>
+  </div>
+
+  
+  <!-- Modal: Add New Shortcut -->
+  <div id="addShortcutModal" class="modal-backdrop" onclick="if(event.target===this) closeAddShortcutModal()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>＋ เพิ่มทางลัดเว็บไซต์</h3>
+        <button class="modal-close" onclick="closeAddShortcutModal()" title="ปิดหน้าต่าง">×</button>
+      </div>
+      <form id="addShortcutForm" onsubmit="saveNewShortcut(event)">
+        <div class="modal-body">
+          <label class="modal-field">
+            <span>ชื่อเว็บไซต์</span>
+            <input id="newShortcutTitle" type="text" placeholder="เช่น Netflix, Pantip, Twitch, Claude" required autofocus />
+          </label>
+          <label class="modal-field">
+            <span>ที่อยู่เว็บไซต์ (URL)</span>
+            <input id="newShortcutUrl" type="text" placeholder="เช่น netflix.com, pantip.com หรือ https://..." required />
+          </label>
+          <div class="modal-tip">
+            ✨ <strong>ระบบอัจฉริยะ:</strong> Nova จะดึงไอคอนโลโก้ของแท้ความละเอียดสูงจากเว็บไซต์มาแสดงให้อัตโนมัติทันที
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" onclick="closeAddShortcutModal()">ยกเลิก</button>
+          <button type="submit" class="btn-save">บันทึกทางลัด</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -1200,18 +1429,20 @@
     // Sticky Note Autosave
     let noteTimer = null;
     function saveNote(val) {
-      document.getElementById('noteStatus').textContent = 'กำลังพิมพ์...';
+      const st = document.getElementById('noteStatus');
+      if (st) st.textContent = 'กำลังบันทึก...';
       clearTimeout(noteTimer);
       noteTimer = setTimeout(() => {
+        localStorage.setItem('nova_sticky_notes', val);
         localStorage.setItem('nova_sala_note', val);
         send({ cmd: 'SaveNotes', notes: val });
-        document.getElementById('noteStatus').textContent = '✓ บันทึกเรียบร้อยแล้ว';
-      }, 400);
+        if (st) st.textContent = '✓ บันทึกเรียบร้อยแล้ว';
+      }, 350);
     }
 
     function loadSavedNote() {
-      const note = localStorage.getItem('nova_sala_note');
-      if (note !== null) {
+      const note = localStorage.getItem('nova_sticky_notes') || localStorage.getItem('nova_sala_note');
+      if (note !== null && document.getElementById('stickyNote')) {
         document.getElementById('stickyNote').value = note;
       }
     }
@@ -1250,7 +1481,175 @@
     }
 
     // Initialization
+    
+    // =========================================================================
+    // AUTHENTIC OFFICIAL BRAND LOGOS (REAL SVGs)
+    // =========================================================================
+    const BRAND_LOGOS = {
+      google: `<svg viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17Z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.14-1.55.38-2.27V6.58H1.25C.45 8.16 0 9.97 0 12c0 2.03.45 3.84 1.25 5.42l4.03-3.15Z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"/></svg>`,
+      youtube: `<svg viewBox="0 0 24 24"><path fill="#FF0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/><polygon fill="#FFFFFF" points="9.545 15.568 9.545 8.432 15.818 12"/></svg>`,
+      github: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>`,
+      chatgpt: `<svg viewBox="0 0 24 24" fill="#10A37F"><path d="M22.28 9.82a5.98 5.98 0 0 0-.52-4.91 6.05 6.05 0 0 0-6.51-2.9 6.07 6.07 0 0 0-10.27 2.17 5.98 5.98 0 0 0-4 2.9 6.05 6.05 0 0 0 .74 7.1 5.98 5.98 0 0 0 .51 4.91 6.05 6.05 0 0 0 6.51 2.9A5.98 5.98 0 0 0 13.26 24a6.06 6.06 0 0 0 5.77-4.21 5.99 5.99 0 0 0 4-2.9 6.06 6.06 0 0 0-.75-7.07zm-9.02 12.61a4.48 4.48 0 0 1-2.88-1.04l.14-.08 4.78-2.76a.79.79 0 0 0 .39-.68v-6.74l2.02 1.17a.07.07 0 0 1 .04.05v5.58a4.5 4.5 0 0 1-4.49 4.5zm-9.66-4.13a4.47 4.47 0 0 1-.53-3.01l.14.08 4.78 2.76a.77.77 0 0 0 .78 0l5.84-3.37v2.33a.08.08 0 0 1-.03.06L9.74 19.95a4.5 4.5 0 0 1-6.14-1.65zM2.34 7.9a4.49 4.49 0 0 1 2.37-1.98v5.68a.77.77 0 0 0 .39.68l5.81 3.35-2.02 1.17a.08.08 0 0 1-.07 0l-4.83-2.79A4.5 4.5 0 0 1 2.34 7.9zm16.1 3.85L12.6 8.38l2.02-1.17a.08.08 0 0 1 .07 0l4.83 2.79a4.49 4.49 0 0 1-.68 8.1v-5.67a.79.79 0 0 0-.4-.68zm2.01-3.02l-.14-.09-4.77-2.78a.78.78 0 0 0-.79 0L9.41 9.23V6.9a.07.07 0 0 1 .03-.06l4.83-2.79a4.5 4.5 0 0 1 6.68 4.66zM8.31 12.86l-2.02-1.16a.08.08 0 0 1-.04-.06V6.07a4.5 4.5 0 0 1 7.38-3.45l-.14.08L8.7 5.46a.79.79 0 0 0-.39.68v6.72zm1.26 1.48l3.42-1.98 3.41 1.98v3.94l-3.41 1.97-3.42-1.97v-3.94z"/></svg>`,
+      wikipedia: `<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12.09 2.91C10.87 2.91 9.8 3.5 9.17 4.54L1.75 16.92C1.48 17.37 1.34 17.88 1.34 18.4c0 1.48 1.2 2.69 2.69 2.69h15.94c1.49 0 2.69-1.21 2.69-2.69 0-.52-.14-1.03-.41-1.48L15 4.54c-.63-1.04-1.7-1.63-2.91-1.63zm.01 3.59c.43 0 .8.22 1.02.59l6.56 11c.21.35.21.78 0 1.13-.22.36-.6.58-1.02.58H5.34c-.42 0-.8-.22-1.02-.58-.21-.35-.21-.78 0-1.13l6.56-11c.22-.37.59-.59 1.02-.59z"/><path fill="currentColor" d="M14.5 9.5l-2.5 5.5-2.5-5.5H8l3.5 7.5h1l3.5-7.5z"/></svg>`,
+      reddit: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#FF4500"/><path fill="#FFF" d="M19.7 12.1c0-.7-.6-1.3-1.3-1.3-.4 0-.7.2-.9.5-1-.7-2.3-1.2-3.8-1.3l.7-3.1 2.1.5c0 .6.5 1 1.1 1 .6 0 1.1-.5 1.1-1.1s-.5-1.1-1.1-1.1c-.5 0-.9.3-1 .8l-2.4-.5c-.1 0-.3.1-.3.3l-.7 3.5c-1.6.1-3 .6-4 1.3-.2-.3-.5-.5-.9-.5-.7 0-1.3.6-1.3 1.3 0 .5.3.9.7 1.1-.1.3-.1.6-.1 1 0 2.2 2.5 4 5.6 4s5.6-1.8 5.6-4c0-.3 0-.6-.1-1 .4-.2.7-.6.7-1.1zm-10.7.8c0-.6.5-1.1 1.1-1.1s1.1.5 1.1 1.1-.5 1.1-1.1 1.1-1.1-.5-1.1-1.1zm6.2 3.2c-.8.8-2.3.8-3.1.8-.8 0-2.3 0-3.1-.8-.1-.1-.1-.3 0-.4.1-.1.3-.1.4 0 .6.6 1.8.7 2.7.7.9 0 2.1-.1 2.7-.7.1-.1.3-.1.4 0 .1.1.1.3 0 .4zm-.2-2.1c-.6 0-1.1-.5-1.1-1.1s.5-1.1 1.1-1.1 1.1.5 1.1 1.1-.5 1.1-1.1 1.1z"/></svg>`,
+      x: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`,
+      facebook: `<svg viewBox="0 0 24 24"><path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`
+    };
+
+    const DEFAULT_SHORTCUTS = [
+      { id: 'google', title: 'Google', desc: 'ค้นหาข้อมูล ข่าวสาร และทุกสิ่ง', url: 'https://www.google.com', brand: 'google' },
+      { id: 'youtube', title: 'YouTube', desc: 'ชมวิดีโอ สตรีมสด และเพลงโปรด', url: 'https://www.youtube.com', brand: 'youtube' },
+      { id: 'github', title: 'GitHub', desc: 'คลังโค้ดและโปรเจกต์โอเพนซอร์ส', url: 'https://github.com', brand: 'github' },
+      { id: 'chatgpt', title: 'ChatGPT', desc: 'คู่หูปัญญาประดิษฐ์ช่วยงานและเรียนรู้', url: 'https://chatgpt.com', brand: 'chatgpt' },
+      { id: 'wikipedia', title: 'Wikipedia', desc: 'สารานุกรมเสรีภาษาไทย', url: 'https://th.wikipedia.org', brand: 'wikipedia' },
+      { id: 'reddit', title: 'Reddit', desc: 'ชุมชนสนทนาและกระทู้ทั่วโลก', url: 'https://www.reddit.com', brand: 'reddit' },
+      { id: 'x', title: 'X (Twitter)', desc: 'เกาะติดเทรนด์และข่าวสารเรียลไทม์', url: 'https://x.com', brand: 'x' },
+      { id: 'facebook', title: 'Facebook', desc: 'เชื่อมต่อกับเพื่อนและกลุ่มสังคม', url: 'https://www.facebook.com', brand: 'facebook' }
+    ];
+
+    function getShortcuts() {
+      try {
+        const stored = localStorage.getItem('nova_user_shortcuts');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {
+        console.error('Error reading shortcuts:', e);
+      }
+      return DEFAULT_SHORTCUTS;
+    }
+
+    function saveShortcuts(list) {
+      localStorage.setItem('nova_user_shortcuts', JSON.stringify(list));
+    }
+
+    function extractHostname(rawUrl) {
+      try {
+        let u = rawUrl.trim();
+        if (!u.startsWith('http://') && !u.startsWith('https://')) u = 'https://' + u;
+        return new URL(u).hostname;
+      } catch (e) {
+        return rawUrl;
+      }
+    }
+
+    function renderShortcuts() {
+      const container = document.getElementById('shortcutGrid');
+      if (!container) return;
+      const list = getShortcuts();
+
+      document.getElementById('shortcutCountBadge').textContent = list.length + ' เว็บ';
+
+      let html = '';
+      list.forEach(item => {
+        let logoHtml = '';
+        if (item.brand && BRAND_LOGOS[item.brand]) {
+          logoHtml = BRAND_LOGOS[item.brand];
+        } else {
+          const domain = extractHostname(item.url);
+          logoHtml = `<img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128" onerror="this.replaceWith('${(item.title||'W')[0].toUpperCase()}')" alt="${item.title}" />`;
+        }
+
+        html += `
+          <div class="shortcut" onclick="go('${item.url}')" title="เปิด ${item.title} (${item.url})">
+            <button class="delete-btn" onclick="deleteShortcut('${item.id}', event)" title="ลบทางลัดนี้">×</button>
+            <div class="tile-header">
+              <div class="brand-logo-wrap">${logoHtml}</div>
+              <span class="arrow" style="font-size:13px;color:var(--muted);">↗</span>
+            </div>
+            <div>
+              <strong>${item.title}</strong>
+              <small>${item.desc || extractHostname(item.url)}</small>
+            </div>
+          </div>
+        `;
+      });
+
+      // Quick-Add Card
+      html += `
+        <div class="shortcut add-shortcut-card" onclick="openAddShortcutModal()" title="คลิกเพื่อเพิ่มทางลัดเว็บไซต์ใหม่">
+          <div class="add-icon-circle">＋</div>
+          <div>
+            <strong style="color:var(--accent);">เพิ่มทางลัดใหม่</strong>
+            <small>คลิกเพื่อเพิ่มเว็บโปรด</small>
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    function deleteShortcut(id, event) {
+      if (event) event.stopPropagation();
+      let list = getShortcuts();
+      const target = list.find(s => s.id === id);
+      list = list.filter(s => s.id !== id);
+      saveShortcuts(list);
+      renderShortcuts();
+      showToast(`🗑️ ลบทางลัด "${target ? target.title : ''}" เรียบร้อย`);
+    }
+
+    function resetShortcuts() {
+      saveShortcuts(DEFAULT_SHORTCUTS);
+      renderShortcuts();
+      showToast('↺ คืนค่าทางลัดตั้งต้น 8 เว็บไซต์ยอดนิยมเรียบร้อย');
+    }
+
+    function openAddShortcutModal() {
+      const modal = document.getElementById('addShortcutModal');
+      document.getElementById('newShortcutTitle').value = '';
+      document.getElementById('newShortcutUrl').value = '';
+      modal.classList.add('open');
+      setTimeout(() => document.getElementById('newShortcutTitle').focus(), 150);
+    }
+
+    function closeAddShortcutModal() {
+      document.getElementById('addShortcutModal').classList.remove('open');
+    }
+
+    function saveNewShortcut(e) {
+      e.preventDefault();
+      const title = document.getElementById('newShortcutTitle').value.trim();
+      let url = document.getElementById('newShortcutUrl').value.trim();
+      if (!title || !url) return;
+
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+      }
+
+      const domain = extractHostname(url);
+      let brand = null;
+      const lower = domain.toLowerCase();
+      if (lower.includes('google')) brand = 'google';
+      else if (lower.includes('youtube')) brand = 'youtube';
+      else if (lower.includes('github')) brand = 'github';
+      else if (lower.includes('chatgpt') || lower.includes('openai')) brand = 'chatgpt';
+      else if (lower.includes('wikipedia')) brand = 'wikipedia';
+      else if (lower.includes('reddit')) brand = 'reddit';
+      else if (lower.includes('twitter') || lower === 'x.com') brand = 'x';
+      else if (lower.includes('facebook')) brand = 'facebook';
+
+      const list = getShortcuts();
+      const newId = 'shortcut_' + Date.now();
+      list.push({
+        id: newId,
+        title: title,
+        desc: domain,
+        url: url,
+        brand: brand
+      });
+
+      saveShortcuts(list);
+      closeAddShortcutModal();
+      renderShortcuts();
+      showToast(`✅ เพิ่มทางลัด "${title}" สำเร็จ!`);
+    }
+
+// Unified saveNote used above
+
     window.addEventListener('DOMContentLoaded', () => {
+      renderShortcuts();
       const savedTheme = localStorage.getItem('nova_sala_theme') || 'paper';
       applyTheme(savedTheme);
       updateDateAndGreeting();
@@ -1262,100 +1661,52 @@
        ========================================================================= -->
   <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <defs>
-      <!-- หน้าแรก: ดัดจากรูปบ้านให้คล้ายหลังคาศาลา -->
+      <!-- หน้าแรก: ไอคอนบ้านมาตรฐาน คมชัด ชัดเจน -->
       <symbol id="sala-home" viewBox="0 0 24 24">
-        <path d="M3.5 10.2 12 3.4l8.5 6.8" />
-        <path d="M5.8 9v9.5c0 .8.6 1.5 1.4 1.5h9.6c.8 0 1.4-.7 1.4-1.5V9" />
-        <path d="M10 20v-5.2c0-.7.5-1.2 1.2-1.2h1.6c.7 0 1.2.5 1.2 1.2V20" />
+        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1V9.5z" />
       </symbol>
 
-      <!-- ค้นหา -->
+      <!-- ค้นหา: แว่นขยายมาตรฐานคมชัด -->
       <symbol id="sala-search" viewBox="0 0 24 24">
-        <path d="M10.4 4.1c3.5 0 6.3 2.8 6.3 6.3s-2.8 6.3-6.3 6.3-6.3-2.8-6.3-6.3 2.8-6.3 6.3-6.3Z" />
-        <path d="m15.2 15.2 4.6 4.6" />
-        <path d="M7.6 8.4c.7-1.2 2.1-1.8 3.5-1.6" opacity=".55" />
+        <circle cx="11" cy="11" r="7" />
+        <line x1="16" y1="16" x2="21" y2="21" />
       </symbol>
 
-      <!-- ย้อนกลับ / ไปหน้าถัดไป -->
-      <symbol id="sala-back" viewBox="0 0 24 24">
-        <path d="M19 12H5.5" />
-        <path d="m10.8 5.8-6 6.2 6 6" />
-        <path d="M15.5 5.5v2" opacity=".45" />
-      </symbol>
-
-      <symbol id="sala-forward" viewBox="0 0 24 24">
-        <path d="M5 12h13.5" />
-        <path d="m13.2 5.8 6 6.2-6 6" />
-      </symbol>
-
-      <!-- รีเฟรช เว้นช่องเล็กๆ ให้ดูมีบุคลิก -->
-      <symbol id="sala-reload" viewBox="0 0 24 24">
-        <path d="M19.2 8.2A8 8 0 0 0 5 7.5L3.2 9.5" />
-        <path d="M3.2 5.4v4.3h4.3" />
-        <path d="M4.8 15.8A8 8 0 0 0 19 16.5l1.8-2" />
-        <path d="M20.8 18.6v-4.3h-4.3" />
-      </symbol>
-
-      <!-- บุกมาร์ก -->
+      <!-- บุกมาร์ก & ประวัติ: ดาว 5 แฉกมาตรฐาน ชัดเจน -->
       <symbol id="sala-bookmark" viewBox="0 0 24 24">
-        <path d="M6.6 4.1c0-.6.5-1.1 1.1-1.4h8.6c.7 0 1.2.5 1.2 1.2v16l-6.2-3.8-5.3 4.1V4.1Z" />
-        <path d="M9.7 7.2h4.8" opacity=".55" />
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
       </symbol>
 
-      <!-- รายการอ่านภายหลัง -->
+      <!-- โหมดอ่านสบายตา: หนังสือเปิดอ่านมาตรฐาน -->
       <symbol id="sala-reading" viewBox="0 0 24 24">
-        <path d="M12 6.1c-1.8-1.5-4.1-2-7.7-1.5v14.2c3.1-.4 5.8.1 7.7 1.7V6.1Z" />
-        <path d="M12 6.1c1.8-1.5 4.1-2 7.7-1.5v14.2c-3.1-.4-5.9.1-7.7 1.7" />
-        <path d="M7.2 8.6c.9-.1 1.6 0 2.3.2M14.5 8.8c.7-.2 1.5-.3 2.3-.3" />
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
       </symbol>
 
-      <!-- ดาวน์โหลด -->
+      <!-- การดาวน์โหลด: ถาดรองพร้อมลูกศรชี้ลงมาตรฐาน -->
       <symbol id="sala-download" viewBox="0 0 24 24">
-        <path d="M12 3.8v10.7" />
-        <path d="m7.8 10.7 4.2 4.3 4.2-4.3" />
-        <path d="M4.4 15.8v3.2c0 .9.7 1.6 1.6 1.6h12c.9 0 1.6-.7 1.6-1.6v-3.2" />
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" y1="15" x2="12" y2="3" />
       </symbol>
 
-      <!-- เพิ่มแท็บ -->
-      <symbol id="sala-plus" viewBox="0 0 24 24">
-        <path d="M12 5.5v13M5.5 12h13" />
-        <path d="M17.7 4.5v2M16.7 5.5h2" opacity=".65" />
-      </symbol>
-
-      <!-- ปิดแท็บ -->
-      <symbol id="sala-close" viewBox="0 0 24 24">
-        <path d="m7 7 10 10M17 7 7 17" />
-      </symbol>
-
-      <!-- เพิ่มแท็บ -->
-      <symbol id="sala-new-tab" viewBox="0 0 24 24">
-        <path d="M8.2 4.2h7.6c2 0 3.4 1.4 3.4 3.4v8.8c0 2-1.4 3.4-3.4 3.4H8.2c-2 0-3.4-1.4-3.4-3.4V7.6c0-1.9 1.4-3.4 3.4-3.4Z" />
-        <path d="M12 8.5v7M8.5 12h7" />
-      </symbol>
-
-      <!-- ส่วนขยาย / ปลั๊กอิน: จิ๊กซอว์แบบเส้นต่อเนื่อง -->
+      <!-- แท็บแนวตั้ง: ไอคอนหน้าต่างเบราว์เซอร์พร้อมแท็บข้าง -->
       <symbol id="sala-extension" viewBox="0 0 24 24">
-        <path d="M9.2 4.3c0-1 1-1.8 2-1.3 1.1.5 1.2 2.2.2 2.8h3.4c.6 0 1 .4 1 1v3.1c1.4-.8 3.1.1 3.1 1.7 0 1.7-1.8 2.6-3.1 1.7v4.2c0 .7-.5 1.2-1.2 1.2h-3.3c.7 1.6-.3 3.3-1.9 3.3-1.7 0-2.7-1.8-1.8-3.3H5.9c-.8 0-1.3-.5-1.3-1.3v-3.4c1.7.8 3.4-.2 3.4-1.8 0-1.7-1.8-2.7-3.4-1.8V7.7c0-.8.6-1.4 1.4-1.4h3.2v-2Z" />
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+        <line x1="9" y1="3" x2="9" y2="21" />
+        <line x1="13" y1="9" x2="17" y2="9" />
+        <line x1="13" y1="14" x2="17" y2="14" />
       </symbol>
 
-      <!-- ตั้งค่า: สไตล์ sliders -->
+      <!-- ตั้งค่า: เฟือง Cogwheel สไตล์โมเดิร์น -->
       <symbol id="sala-settings" viewBox="0 0 24 24">
-        <path d="M4 7h7M15 7h5M4 17h3M11 17h9" />
-        <path d="M11 4.8v4.4M7 14.8v4.4" />
-        <circle cx="13" cy="7" r="2" />
-        <circle cx="9" cy="17" r="2" />
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
       </symbol>
 
-      <!-- สุ่มธีม / ดาวแห่งความสงบ: ลายเซ็น Sala -->
+      <!-- สุ่มธีม: ดาวประกาย 4 แฉก -->
       <symbol id="sala-spark" viewBox="0 0 24 24">
-        <path d="M12 2.8c.5 5.2 2.3 8 7.1 9.1-4.8 1.2-6.6 4-7.1 8.4-.5-4.4-2.3-7.2-7.2-8.4C9.7 10.8 11.5 8 12 2.8Z" />
-        <path d="M19 3.5v3M17.5 5h3" />
-      </symbol>
-
-      <!-- บุกมาร์กแบบติดแล้ว -->
-      <symbol id="sala-bookmarked" viewBox="0 0 24 24">
-        <path d="M6.5 4.2c0-.8.6-1.4 1.4-1.4h8.2c.8 0 1.4.6 1.4 1.4v16.1L12 16.2l-5.5 4.1V4.2Z" />
-        <path d="m9.2 9.3 1.8 1.8 3.7-3.8" />
+        <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
       </symbol>
     </defs>
   </svg>

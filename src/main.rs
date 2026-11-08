@@ -256,6 +256,7 @@ enum UiCommand {
     PrintPage,
     ToggleFullscreen,
     ToggleDevTools,
+    OpenCommandPalette,
     CycleTilingMode,
     MoveTabById { id: usize, before_id: Option<usize> },
     ToggleBookmarksBar,
@@ -734,7 +735,25 @@ fn main() -> wry::Result<()> {
                                         UiCommand::NewTab { .. }
                                         | UiCommand::Navigate { .. }
                                         | UiCommand::PrintPage
-                                        | UiCommand::ToggleFullscreen => true,
+                                        | UiCommand::ToggleFullscreen
+                                        | UiCommand::ToggleSidePanel
+                                        | UiCommand::ToggleReaderMode
+                                        | UiCommand::ToggleVerticalTabs
+                                        | UiCommand::SaveNotes { .. }
+                                        | UiCommand::AddBookmark
+                                        | UiCommand::RemoveBookmark { .. }
+                                        | UiCommand::SetTheme { .. }
+                                        | UiCommand::Reload
+                                        | UiCommand::Zoom { .. }
+                                        | UiCommand::ResetZoom
+                                        | UiCommand::OpenCommandPalette
+                                        | UiCommand::CycleTilingMode
+                                        | UiCommand::ToggleZenMode
+                                        | UiCommand::SnoozeInactiveTabs
+                                        | UiCommand::SetAsDefaultBrowser
+                                        | UiCommand::OpenDownloadsFolder
+                                        | UiCommand::ClearHistory
+                                        | UiCommand::ClearDownloads => true,
                                         _ => false,
                                     };
                                     if allowed {
@@ -1096,6 +1115,9 @@ fn main() -> wry::Result<()> {
                         if let Some(t) = tabs.get(&active_tab_id) {
                             t.webview.open_devtools();
                         }
+                    }
+                    UiCommand::OpenCommandPalette => {
+                        let _ = ui_webview.evaluate_script("if (typeof openCommandPalette === 'function') openCommandPalette();");
                     }
 
                     UiCommand::CycleTilingMode => {

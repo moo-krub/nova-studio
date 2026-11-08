@@ -60,7 +60,7 @@ def main():
     checksum_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"✅ Checksums written to {checksum_file}")
 
-    # 5. Deploy to Desktops for instant testing
+    # 5. Deploy to Desktops and Installation Directory for instant testing
     user_home = Path.home()
     desktop_targets = [
         user_home / "Desktop",
@@ -69,13 +69,23 @@ def main():
     for d in desktop_targets:
         if d.exists():
             try:
-                dest_setup = d / "Nova-Studio-Setup.exe"
-                dest_browser = d / "Nova Studio v6.0.exe"
-                shutil.copy2(setup_exe, dest_setup)
-                shutil.copy2(source_exe, dest_browser)
+                shutil.copy2(setup_exe, d / "Nova-Studio-Setup.exe")
+                shutil.copy2(source_exe, d / "Nova Studio.exe")
+                shutil.copy2(source_exe, d / "Nova Studio v6.0.exe")
+                shutil.copy2(source_exe, d / "Nova Studio v6.1.0.exe")
+                shutil.copy2(root / "sala.html", d / "sala.html")
                 print(f"🚀 Deployed to Desktop: {d}")
             except Exception as e:
                 print(f"⚠️ Could not copy to {d}: {e}")
+
+    # Also deploy directly to D:\NovaStudio if it exists
+    d_install = Path("D:/NovaStudio")
+    if d_install.exists():
+        try:
+            shutil.copy2(source_exe, d_install / "Nova Studio.exe")
+            print(f"🚀 Deployed to Installed Path: {d_install / 'Nova Studio.exe'}")
+        except Exception as e:
+            print(f"⚠️ Could not copy to D:/NovaStudio: {e}")
 
     print("\n🎉 Build & Packaging completed successfully!")
 

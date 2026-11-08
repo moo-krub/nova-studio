@@ -1140,17 +1140,11 @@ fn main() -> wry::Result<()> {
                     }
                     UiCommand::SetUiModalOpen { open } => {
                         ui_modal_open = open;
-                        let target_h = if ui_modal_open {
-                            win_size.height
-                        } else if zen_mode {
-                            UI_HEIGHT_ZEN
-                        } else {
-                            UI_HEIGHT_NORMAL
-                        };
-                        let _ = ui_webview.set_bounds(Rect {
-                            position: LogicalPosition::new(0.0, 0.0).into(),
-                            size: LogicalSize::new(win_size.width, target_h).into(),
-                        });
+                        sync_all_views(
+                            &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
+                            &current_workspace, win_size.width, win_size.height,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                        );
                     }
 
                     UiCommand::StartInPlaceUpdate { download_url, version } => {
@@ -1728,7 +1722,7 @@ fn sync_all_views(
         size: LogicalSize::new(win_width, ui_h).into(),
     });
 
-    let avail_width = if panel_open {
+    let avail_width = if panel_open && !ui_modal_open {
         let pw = PANEL_WIDTH.min(win_width * 0.45);
         let _ = panel_webview.set_bounds(Rect {
             position: LogicalPosition::new(win_width - pw, normal_ui_h).into(),
@@ -1759,7 +1753,16 @@ fn sync_all_views(
 
     for &id in tab_order {
         if let Some(tab) = tabs.get(&id) {
-            if id == active_id && tab.workspace == current_workspace {
+            if ui_modal_open {
+                let _ = tab.webview.set_bounds(Rect {
+                    position: LogicalPosition::new(0.0, 0.0).into(),
+                    size: LogicalSize::new(0.0, 0.0).into(),
+                });
+                if id == active_id && tab.workspace == current_workspace {
+                    active_url = tab.url.clone();
+                    active_title = tab.title.clone();
+                }
+            } else if id == active_id && tab.workspace == current_workspace {
                 let w = if second_id.is_some() { avail_width * 0.5 } else { avail_width };
                 let _ = tab.webview.set_bounds(Rect {
                     position: LogicalPosition::new(0.0, normal_ui_h).into(),

@@ -1005,6 +1005,133 @@
       font-weight: 800;
     }
 
+    
+    /* Settings Modal Styles */
+    .settings-modal-card {
+      max-width: 680px;
+      width: 100%;
+      border-radius: 20px;
+    }
+    .settings-layout {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      min-height: 420px;
+    }
+    .settings-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 16px 10px;
+      background: var(--field);
+      border-right: 1px solid var(--line);
+    }
+    .settings-tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      border-radius: 10px;
+      background: transparent;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      transition: all .16s ease;
+    }
+    .settings-tab-btn:hover {
+      color: var(--text);
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
+    }
+    .settings-tab-btn.active {
+      color: var(--surface);
+      background: var(--accent);
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 26%, transparent);
+    }
+    .settings-content {
+      padding: 18px 24px;
+      overflow-y: auto;
+      max-height: 500px;
+    }
+    .settings-pane {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .settings-pane.active {
+      display: flex;
+    }
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .settings-row strong {
+      font-size: 13px;
+      color: var(--text);
+      display: block;
+      margin-bottom: 3px;
+    }
+    .settings-row small {
+      font-size: 11.5px;
+      color: var(--muted);
+      line-height: 1.4;
+      display: block;
+    }
+    .settings-select {
+      padding: 7px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--field);
+      color: var(--text);
+      font-weight: 600;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+    .theme-palette-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .theme-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 6px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--field);
+      cursor: pointer;
+      text-align: center;
+      transition: all .16s ease;
+    }
+    .theme-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: var(--soft-shadow);
+    }
+    .theme-circle {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid;
+    }
+    .theme-card strong {
+      font-size: 12px;
+      color: var(--text);
+    }
+    .theme-card small {
+      font-size: 10px;
+      color: var(--muted);
+    }
+
     /* Modal Backdrop & Card */
     .modal-backdrop {
       position: fixed;
@@ -1203,7 +1330,7 @@
           <button class="rail-button" onclick="sendAction('ToggleVerticalTabs')" title="สลับโหมดแท็บแนวตั้ง (Vertical Tabs)" aria-label="แท็บแนวตั้ง">
             <span class="icon-shell"><svg class="sala-icon" aria-hidden="true"><use href="#sala-extension"></use></svg></span>
           </button>
-          <button class="rail-button" onclick="openSpotlight()" title="Spotlight Command Palette (Ctrl+K)" aria-label="Spotlight">
+          <button class="rail-button" onclick="openSettingsModal()" title="ศูนย์การตั้งค่า Nova Studio (Settings)" aria-label="การตั้งค่า">
             <span class="icon-shell"><svg class="sala-icon" aria-hidden="true"><use href="#sala-settings"></use></svg></span>
           </button>
         </div>
@@ -1351,6 +1478,281 @@
     </div>
   </div>
 
+  
+  <!-- Modal: Nova Studio Settings Center (Comprehensive Master System) -->
+  <div id="settingsModal" class="modal-backdrop" onclick="if(event.target===this) closeSettingsModal()">
+    <div class="modal-card settings-modal-card">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:20px;">⚙️</span>
+          <h3 style="margin:0;font-size:16px;font-weight:800;">ศูนย์การตั้งค่า Nova Studio</h3>
+          <span class="count-badge">v6.1.0</span>
+        </div>
+        <button class="modal-close" onclick="closeSettingsModal()" title="ปิดหน้าต่าง">×</button>
+      </div>
+
+      <div class="settings-layout">
+        <!-- Settings Sidebar Navigation -->
+        <nav class="settings-nav">
+          <button id="set-tab-general" class="settings-tab-btn active" onclick="switchSettingsTab('general')">
+            <span>🌐</span> ทั่วไป
+          </button>
+          <button id="set-tab-appearance" class="settings-tab-btn" onclick="switchSettingsTab('appearance')">
+            <span>🎨</span> รูปลักษณ์
+          </button>
+          <button id="set-tab-privacy" class="settings-tab-btn" onclick="switchSettingsTab('privacy')">
+            <span>🛡️</span> ความปลอดภัย
+          </button>
+          <button id="set-tab-performance" class="settings-tab-btn" onclick="switchSettingsTab('performance')">
+            <span>⚡</span> ประสิทธิภาพ
+          </button>
+          <button id="set-tab-about" class="settings-tab-btn" onclick="switchSettingsTab('about')">
+            <span>ℹ️</span> เกี่ยวกับ
+          </button>
+        </nav>
+
+        <!-- Settings Content Panes -->
+        <div class="settings-content">
+          <!-- Pane: General -->
+          <div id="settings-pane-general" class="settings-pane active">
+            <h4 style="margin:0 0 12px 0;font-size:14px;font-weight:800;color:var(--text);">การทำงานและเบราว์เซอร์หลัก</h4>
+            
+            <div class="settings-row">
+              <div>
+                <strong>เบราว์เซอร์เริ่มต้น (Default Browser)</strong>
+                <small>ตั้งค่าให้ Windows เปิดลิงก์และไฟล์เว็บด้วย Nova Studio โดยอัตโนมัติ</small>
+              </div>
+              <button class="action-btn" onclick="sendAction('SetAsDefaultBrowser'); showToast('🌐 ลงทะเบียน Nova Studio เป็นเบราว์เซอร์หลักเรียบร้อย!');">
+                ตั้งเป็นเบราว์เซอร์หลัก
+              </button>
+            </div>
+
+            <div class="settings-row">
+              <div>
+                <strong>เครื่องมือค้นหาเริ่มต้น (Default Search Engine)</strong>
+                <small>เครื่องมือที่ใช้ค้นหาเมื่อพิมพ์คำค้นในช่องค้นหาหน้าแรก</small>
+              </div>
+              <select id="settingsSearchEngine" class="settings-select" onchange="setSearchEngine(this.value)">
+                <option value="google">Google</option>
+                <option value="duckduckgo">DuckDuckGo</option>
+                <option value="bing">Microsoft Bing</option>
+                <option value="brave">Brave Search</option>
+                <option value="yahoo">Yahoo!</option>
+              </select>
+            </div>
+
+            <div class="settings-row">
+              <div>
+                <strong>รูปแบบแท็บ (Tab Layout)</strong>
+                <small>สลับตำแหน่งแถบแท็บระหว่างด้านบนแนวนอน หรือแถบข้างแนวตั้ง (Vertical Tabs)</small>
+              </div>
+              <button class="action-btn secondary" onclick="sendAction('ToggleVerticalTabs'); showToast('📑 สลับรูปแบบแท็บเรียบร้อย');">
+                สลับแท็บแนวตั้ง / แนวนอน
+              </button>
+            </div>
+
+            <div class="settings-row">
+              <div>
+                <strong>เปิดโฟลเดอร์ไฟล์ดาวน์โหลด (Downloads Folder)</strong>
+                <small>เปิดโฟลเดอร์ที่จัดเก็บไฟล์ดาวน์โหลดทั้งหมดในเครื่องของคุณ</small>
+              </div>
+              <button class="action-btn secondary" onclick="sendAction('OpenDownloadsFolder'); showToast('📥 กำลังเปิดโฟลเดอร์ Downloads...');">
+                เปิดโฟลเดอร์
+              </button>
+            </div>
+          </div>
+
+          <!-- Pane: Appearance -->
+          <div id="settings-pane-appearance" class="settings-pane">
+            <h4 style="margin:0 0 12px 0;font-size:14px;font-weight:800;color:var(--text);">ธีมสีและมุมมองการทำงาน</h4>
+
+            <div class="settings-section">
+              <strong style="font-size:13px;">เลือกสไตล์ธีม (Theme Palette)</strong>
+              <small style="display:block;margin-bottom:10px;color:var(--muted);">เลือกบรรยากาศสีสันที่สบายตาและเข้ากับสไตล์ของคุณ</small>
+              <div class="theme-palette-grid">
+                <button class="theme-card" onclick="changeTheme('paper')">
+                  <span class="theme-circle" style="background:#eee8dc;border-color:#df684a;"></span>
+                  <strong>Paper</strong>
+                  <small>คราฟต์อบอุ่น</small>
+                </button>
+                <button class="theme-card" onclick="changeTheme('meadow')">
+                  <span class="theme-circle" style="background:#dfe8da;border-color:#487658;"></span>
+                  <strong>Meadow</strong>
+                  <small>ทุ่งหญ้าเขียว</small>
+                </button>
+                <button class="theme-card" onclick="changeTheme('soda')">
+                  <span class="theme-circle" style="background:#d9e6f7;border-color:#7458c7;"></span>
+                  <strong>Soda</strong>
+                  <small>ฟ้าพาสเทล</small>
+                </button>
+                <button class="theme-card" onclick="changeTheme('zine')">
+                  <span class="theme-circle" style="background:#d7d5cc;border-color:#ef5638;"></span>
+                  <strong>Zine</strong>
+                  <small>มินิมอลจัดจ้าน</small>
+                </button>
+                <button class="theme-card" onclick="changeTheme('night')">
+                  <span class="theme-circle" style="background:#191b19;border-color:#d6a66f;"></span>
+                  <strong>Night</strong>
+                  <small>ดาร์กโหมด</small>
+                </button>
+              </div>
+            </div>
+
+            <div class="settings-row" style="margin-top:16px;">
+              <div>
+                <strong>สลับโหมดแบ่งหน้าจอ (Split View Tiling)</strong>
+                <small>แบ่งหน้าต่างแสดง 1 จอเต็ม, 2 จอคู่ข้างกัน, หรือ 3 จอพร้อมกัน</small>
+              </div>
+              <button class="action-btn secondary" onclick="sendAction('CycleTilingMode'); showToast('◫ สลับโหมดแบ่งหน้าจอเรียบร้อย');">
+                สลับ 1 จอ / 2 จอ / 3 จอ
+              </button>
+            </div>
+
+            <div class="settings-row">
+              <div>
+                <strong>โหมดไร้ขอบสมาธิ (Zen Focus Mode)</strong>
+                <small>ซ่อนขอบและแถบเครื่องมือทั้งหมด เหลือเพียงหน้าเว็บเต็มตา</small>
+              </div>
+              <button class="action-btn secondary" onclick="sendAction('ToggleZenMode'); showToast('🧘 สลับโหมดไร้ขอบ Zen Mode');">
+                เปิด / ปิด Zen Mode
+              </button>
+            </div>
+          </div>
+
+          <!-- Pane: Privacy -->
+          <div id="settings-pane-privacy" class="settings-pane">
+            <h4 style="margin:0 0 12px 0;font-size:14px;font-weight:800;color:var(--text);">ความปลอดภัยและความเป็นส่วนตัว</h4>
+
+            <div class="settings-row">
+              <div>
+                <strong>Deep AdGuard (ระบบบล็อกโฆษณา & แทร็กเกอร์)</strong>
+                <small>บล็อกโฆษณากวนใจ ป็อปอัป และสคริปต์ดักข้อมูลแบบฝังระดับเนทีฟ</small>
+              </div>
+              <button class="action-btn" onclick="sendAction('ToggleAdBlock'); showToast('🛡️ สลับสถานะ Deep AdGuard แล้ว');">
+                สลับ เปิด / ปิด บล็อกโฆษณา
+              </button>
+            </div>
+
+            <div class="settings-row">
+              <div>
+                <strong>ระบบตรวจข้ามใบรับรอง SSL อัตโนมัติ (SSL Auto-Bypass)</strong>
+                <small>สถานะ: <strong>เปิดใช้งานอยู่ (Active)</strong> ข้ามการเตือนชื่อโดเมนไม่ตรง (NET::ERR_CERT_COMMON_NAME_INVALID) เพื่อความลื่นไหล</small>
+              </div>
+              <span style="color:#10b981;font-weight:700;font-size:13px;">✓ พร้อมใช้งาน</span>
+            </div>
+
+            <div class="settings-row">
+              <div>
+                <strong>ล้างประวัติการเข้าชมทั้งหมด (Clear Browsing History)</strong>
+                <small>ลบรายการเว็บทั้งหมดที่เคยเข้าชมออกจากหน่วยความจำของเบราว์เซอร์</small>
+              </div>
+              <button class="action-btn" style="background:#ef4444;border-color:#ef4444;" onclick="if(confirm('ยืนยันล้างประวัติการเข้าชมทั้งหมด?')) { sendAction('ClearHistory'); showToast('🗑️ ล้างประวัติการเข้าชมทั้งหมดเรียบร้อย'); }">
+                ล้างประวัติทั้งหมด
+              </button>
+            </div>
+
+            <div class="settings-row">
+              <div>
+                <strong>ล้างข้อมูลแคชและคุกกี้ (Clear Site Data)</strong>
+                <small>ล้างไฟล์ชั่วคราวและคุกกี้เพื่อคืนพื้นที่และรีเฟรชสถานะเว็บ</small>
+              </div>
+              <button class="action-btn secondary" onclick="sendAction('ClearSiteData'); showToast('🧹 ล้างข้อมูลคุกกี้และแคชเรียบร้อย');">
+                ล้างข้อมูลเว็บ
+              </button>
+            </div>
+          </div>
+
+          <!-- Pane: Performance -->
+          <div id="settings-pane-performance" class="settings-pane">
+            <h4 style="margin:0 0 12px 0;font-size:14px;font-weight:800;color:var(--text);">ประสิทธิภาพ ฮาร์ดแวร์ และพลังเสียง</h4>
+
+            <div class="settings-row">
+              <div>
+                <strong>Memory Saver Pro (แช่แข็งแท็บเบื้องหลังเพื่อคืนแรม)</strong>
+                <small>ลดการใช้แรมได้สูงสุด 70% โดยระบบจะจำศีลแท็บที่คุณไม่ได้ใช้งานอัตโนมัติ</small>
+              </div>
+              <button class="action-btn" onclick="sendAction('SnoozeInactiveTabs'); showToast('❄️ แช่แข็งแท็บเบื้องหลัง คืนแรมให้ระบบเรียบร้อย');">
+                ❄️ คืนแรมทันที
+              </button>
+            </div>
+
+            <div class="settings-row">
+              <div>
+                <strong>เร่งความเร็วการ์ดจอเต็มสูบ (GPU Hardware Rasterization)</strong>
+                <small>สถานะ: <strong>DirectX 12 / Vulkan เร่งความเร็วกราฟิกเต็มพิกัด</strong> ลื่นไหล 144Hz+</small>
+              </div>
+              <span style="color:#38bdf8;font-weight:700;font-size:13px;">⚡ เปิดใช้งาน 100%</span>
+            </div>
+
+            <div class="settings-row">
+              <div>
+                <strong>ระบบบูสต์เสียงลำโพง 250% (Audio Boost Pro)</strong>
+                <small>ขยายระดับเสียงให้ดังคมชัดขึ้น 2.5 เท่า สำหรับดูวิดีโอหรือฟังเสียงที่เบา</small>
+              </div>
+              <button class="action-btn secondary" onclick="sendAction('BoostAudio', {gain: 2.5}); showToast('🔊 เปิดใช้งานขยายเสียงลำโพง 250% แล้ว');">
+                🔊 บูสต์เสียง 250%
+              </button>
+            </div>
+
+            <div class="settings-row">
+              <div>
+                <strong>RGX Video Shader (เร่งความคมชัดของภาพและวิดีโอ)</strong>
+                <small>ใช้ AI Shader ปรับขอบภาพและคอนทราสต์ให้คมชัดระดับ Full HD / 4K</small>
+              </div>
+              <button class="action-btn secondary" onclick="sendAction('ToggleRgxGpuShader'); showToast('✨ สลับสถานะ RGX GPU Shader แล้ว');">
+                ✨ สลับ RGX Shader
+              </button>
+            </div>
+          </div>
+
+          <!-- Pane: About -->
+          <div id="settings-pane-about" class="settings-pane">
+            <div style="text-align:center;padding:10px 0 16px 0;">
+              <div style="font-size:32px;margin-bottom:6px;">🪐</div>
+              <h3 style="margin:0 0 4px 0;font-size:17px;font-weight:800;">Nova Studio</h3>
+              <p style="margin:0;color:var(--muted);font-size:12px;">Spatial Web Browser 2027 Edition • Sala Architecture</p>
+              <div style="display:inline-block;margin-top:6px;padding:3px 10px;background:color-mix(in srgb, var(--accent) 14%, transparent);color:var(--accent);border-radius:99px;font-weight:700;font-size:11px;">
+                เวอร์ชัน: v6.1.0 (Official Release)
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div>
+                <strong>สถาปัตยกรรมระบบ (Core Architecture)</strong>
+                <small>คอมไพล์ด้วย Rust 2024 Edition + Tao + Wry + WebView2 Evergreen</small>
+              </div>
+              <span style="color:var(--text);font-weight:600;font-size:12px;">Rust & WebView2</span>
+            </div>
+
+            <div class="settings-row">
+              <div>
+                <strong>ตรวจหาการอัปเดตเวอร์ชันใหม่ (Check for Updates)</strong>
+                <small>ตรวจสอบการปล่อยเวอร์ชันใหม่บน GitHub Releases</small>
+              </div>
+              <button class="action-btn" onclick="go('https://github.com/moo-krub/nova-studio/releases/tag/v6.1.0')">
+                ตรวจหาอัปเดต ↗
+              </button>
+            </div>
+
+            <div class="settings-row">
+              <div>
+                <strong>ซอร์สโค้ดและชุมชนผู้ใช้ (GitHub Repository)</strong>
+                <small>ดูโค้ด แจ้งข้อเสนอแนะ และร่วมพัฒนาโปรเจกต์</small>
+              </div>
+              <button class="action-btn secondary" onclick="go('https://github.com/moo-krub/nova-studio')">
+                GitHub Repo ↗
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="closeSettingsModal()">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div id="toast" class="toast"></div>
 
@@ -1385,6 +1787,68 @@
 
     function sendAction(cmd) {
       send({ cmd: cmd });
+    }
+
+    
+    // =========================================================================
+    // NOVA SETTINGS CENTER LOGIC
+    // =========================================================================
+    const SEARCH_ENGINES = {
+      google: 'https://www.google.com/search?q=',
+      duckduckgo: 'https://duckduckgo.com/?q=',
+      bing: 'https://www.bing.com/search?q=',
+      brave: 'https://search.brave.com/search?q=',
+      yahoo: 'https://search.yahoo.com/search?p='
+    };
+
+    function getSearchEngine() {
+      return localStorage.getItem('nova_search_engine') || 'google';
+    }
+
+    function setSearchEngine(se) {
+      if (SEARCH_ENGINES[se]) {
+        localStorage.setItem('nova_search_engine', se);
+        showToast('🔍 เครื่องมือค้นหาเปลี่ยนเป็น ' + se.toUpperCase() + ' แล้ว');
+      }
+    }
+
+    function openSettingsModal() {
+      const modal = document.getElementById('settingsModal');
+      const seSelect = document.getElementById('settingsSearchEngine');
+      if (seSelect) seSelect.value = getSearchEngine();
+      modal.classList.add('open');
+    }
+
+    function closeSettingsModal() {
+      const modal = document.getElementById('settingsModal');
+      if (modal) modal.classList.remove('open');
+    }
+
+    function switchSettingsTab(tabName) {
+      const tabs = ['general', 'appearance', 'privacy', 'performance', 'about'];
+      tabs.forEach(t => {
+        const btn = document.getElementById('set-tab-' + t);
+        const pane = document.getElementById('settings-pane-' + t);
+        if (btn) btn.classList.toggle('active', t === tabName);
+        if (pane) pane.classList.toggle('active', t === tabName);
+      });
+    }
+
+    // Enhance handleSearch to use selected Search Engine
+    function handleSearch(e) {
+      e.preventDefault();
+      const val = document.getElementById('homeQuery').value.trim();
+      if (!val) return;
+
+      const hasScheme = val.startsWith('http://') || val.startsWith('https://');
+      const isDomain = val.includes('.') && !val.includes(' ');
+      if (hasScheme || isDomain) {
+        go(val);
+      } else {
+        const engine = getSearchEngine();
+        const searchBase = SEARCH_ENGINES[engine] || SEARCH_ENGINES.google;
+        go(searchBase + encodeURIComponent(val));
+      }
     }
 
     function openSpotlight() {

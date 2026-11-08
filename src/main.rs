@@ -257,6 +257,7 @@ enum UiCommand {
     ToggleFullscreen,
     ToggleDevTools,
     OpenCommandPalette,
+    SetUiModalOpen { open: bool },
     CycleTilingMode,
     MoveTabById { id: usize, before_id: Option<usize> },
     ToggleBookmarksBar,
@@ -555,6 +556,7 @@ fn main() -> wry::Result<()> {
     let mut zen_mode = false;
     let mut always_on_top = false;
     let mut is_fullscreen = false;
+    let mut ui_modal_open = false;
 
     // กู้คืนแท็บเดิมทั้งหมดตอนเปิดโปรแกรม
     if !storage.saved_tabs.is_empty() {
@@ -595,7 +597,7 @@ fn main() -> wry::Result<()> {
                 sync_all_views(
                     &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                     &current_workspace, win_size.width, win_size.height,
-                    tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                    tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                 );
             }
             Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => {
@@ -747,6 +749,7 @@ fn main() -> wry::Result<()> {
                                         | UiCommand::Zoom { .. }
                                         | UiCommand::ResetZoom
                                         | UiCommand::OpenCommandPalette
+                                        | UiCommand::SetUiModalOpen { .. }
                                         | UiCommand::CycleTilingMode
                                         | UiCommand::ToggleZenMode
                                         | UiCommand::SnoozeInactiveTabs
@@ -801,7 +804,7 @@ fn main() -> wry::Result<()> {
                             sync_all_views(
                                 &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                                 &current_workspace, win_size.width, win_size.height,
-                                tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                                tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                             );
                         }
                     }
@@ -824,7 +827,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                     }
                     UiCommand::InternalDownloadCompleted { url, path, success } => {
@@ -837,7 +840,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                         let fname = std::path::Path::new(&path)
                             .file_name()
@@ -859,7 +862,7 @@ fn main() -> wry::Result<()> {
                             sync_all_views(
                                 &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                                 &current_workspace, win_size.width, win_size.height,
-                                tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                                tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                             );
                         }
                     }
@@ -869,7 +872,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                     }
                     UiCommand::InternalLoadState { id, loading } => {
@@ -879,7 +882,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                     }
                     UiCommand::OpenDownloadedFile { path } => {
@@ -912,7 +915,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                     }
 
@@ -938,7 +941,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                     }
                     UiCommand::TogglePinTab { id } => {
@@ -948,7 +951,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                     }
 
@@ -961,7 +964,7 @@ fn main() -> wry::Result<()> {
                             sync_all_views(
                                 &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                                 &current_workspace, win_size.width, win_size.height,
-                                tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                                tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                             );
                         } else {
                             let _ = proxy.send_event(UiCommand::NewTab {
@@ -989,7 +992,7 @@ fn main() -> wry::Result<()> {
                             sync_all_views(
                                 &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                                 &current_workspace, win_size.width, win_size.height,
-                                tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                                tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                             );
                         }
                     }
@@ -1007,7 +1010,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                     }
 
@@ -1051,7 +1054,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                     }
 
@@ -1077,7 +1080,7 @@ fn main() -> wry::Result<()> {
                             sync_all_views(
                                 &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                                 &current_workspace, win_size.width, win_size.height,
-                                tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                                tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                             );
                         }
                     }
@@ -1119,6 +1122,20 @@ fn main() -> wry::Result<()> {
                     UiCommand::OpenCommandPalette => {
                         let _ = ui_webview.evaluate_script("if (typeof openCommandPalette === 'function') openCommandPalette();");
                     }
+                    UiCommand::SetUiModalOpen { open } => {
+                        ui_modal_open = open;
+                        let target_h = if ui_modal_open {
+                            win_size.height
+                        } else if zen_mode {
+                            UI_HEIGHT_ZEN
+                        } else {
+                            UI_HEIGHT_NORMAL
+                        };
+                        let _ = ui_webview.set_bounds(Rect {
+                            position: LogicalPosition::new(0.0, 0.0).into(),
+                            size: LogicalSize::new(win_size.width, target_h).into(),
+                        });
+                    }
 
                     UiCommand::CycleTilingMode => {
                         tiling_mode = match tiling_mode { 1 => 2, 2 => 3, _ => 1 };
@@ -1136,7 +1153,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                     }
 
@@ -1145,7 +1162,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                         if side_panel_open {
                             let _ = proxy.send_event(UiCommand::RequestPageExtract);
@@ -1156,7 +1173,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                     }
                     UiCommand::ToggleAlwaysOnTop => {
@@ -1165,7 +1182,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                     }
                     UiCommand::ToggleShadowMode { enable } => {
@@ -1214,7 +1231,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                     }
 
@@ -1234,7 +1251,7 @@ fn main() -> wry::Result<()> {
                             sync_all_views(
                                 &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                                 &current_workspace, win_size.width, win_size.height,
-                                tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                                tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                             );
                         }
                         if let Some(t) = tabs.get(&active_tab_id) {
@@ -1281,7 +1298,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                     }
                     UiCommand::SaveNotes { notes } => {
@@ -1298,7 +1315,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                     }
 
@@ -1320,7 +1337,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                         let msg = format!("📑 สลับเลย์เอาต์แท็บเป็น: {}", if storage.tab_layout == "vertical" { "แนวตั้ง (Vertical)" } else { "แนวนอน (Horizontal)" });
                         let _ = ui_webview.evaluate_script(&format!("window.showToast && window.showToast(\"{}\");", msg));
@@ -1341,7 +1358,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                         let msg = format!("❄️ แช่แข็ง {} แท็บเบื้องหลังเพื่อประหยัดแรมเรียบร้อยแล้ว!", count);
                         let _ = ui_webview.evaluate_script(&format!("window.showToast && window.showToast(\"{}\");", msg));
@@ -1358,7 +1375,7 @@ fn main() -> wry::Result<()> {
                                 sync_all_views(
                                     &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                                     &current_workspace, win_size.width, win_size.height,
-                                    tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                                    tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                                 );
                             }
                         }
@@ -1369,7 +1386,7 @@ fn main() -> wry::Result<()> {
                             sync_all_views(
                                 &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                                 &current_workspace, win_size.width, win_size.height,
-                                tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                                tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                             );
                         }
                     }
@@ -1378,7 +1395,7 @@ fn main() -> wry::Result<()> {
                         sync_all_views(
                             &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                             &current_workspace, win_size.width, win_size.height,
-                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
                     }
                     UiCommand::DeleteHistoryItem { index } => {
@@ -1387,7 +1404,7 @@ fn main() -> wry::Result<()> {
                             sync_all_views(
                                 &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                                 &current_workspace, win_size.width, win_size.height,
-                                tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                                tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                             );
                         }
                     }
@@ -1440,7 +1457,7 @@ fn main() -> wry::Result<()> {
                             sync_all_views(
                                 &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                                 &current_workspace, win_size.width, win_size.height,
-                                tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                                tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                             );
                         }
                     }
@@ -1464,7 +1481,7 @@ fn main() -> wry::Result<()> {
                             sync_all_views(
                                 &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
                                 &current_workspace, win_size.width, win_size.height,
-                                tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                                tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                             );
                         }
                     }
@@ -1543,6 +1560,7 @@ fn sync_all_views(
     tiling_mode: u8,
     panel_open: bool,
     zen_mode: bool,
+    ui_modal_open: bool,
     storage: &mut PersistentData,
     always_on_top: bool,
     ai_bridge: &Arc<(Mutex<SharedAiBridge>, Condvar)>,
@@ -1550,8 +1568,9 @@ fn sync_all_views(
 ) {
     save_session_snapshot(storage, tabs, tab_order, current_workspace, active_id, blocked_counter, false);
 
-    let ui_h = if zen_mode { UI_HEIGHT_ZEN } else { UI_HEIGHT_NORMAL };
-    let content_height = (win_height - ui_h).max(0.0);
+    let ui_h = if ui_modal_open { win_height } else if zen_mode { UI_HEIGHT_ZEN } else { UI_HEIGHT_NORMAL };
+    let normal_ui_h = if zen_mode { UI_HEIGHT_ZEN } else { UI_HEIGHT_NORMAL };
+    let content_height = (win_height - normal_ui_h).max(0.0);
 
     let _ = ui_webview.set_bounds(Rect {
         position: LogicalPosition::new(0.0, 0.0).into(),
@@ -1561,7 +1580,7 @@ fn sync_all_views(
     let avail_width = if panel_open {
         let pw = PANEL_WIDTH.min(win_width * 0.45);
         let _ = panel_webview.set_bounds(Rect {
-            position: LogicalPosition::new(win_width - pw, ui_h).into(),
+            position: LogicalPosition::new(win_width - pw, normal_ui_h).into(),
             size: LogicalSize::new(pw, content_height).into(),
         });
         (win_width - pw).max(0.0)
@@ -1592,7 +1611,7 @@ fn sync_all_views(
             if id == active_id {
                 let w = if second_id.is_some() { avail_width * 0.5 } else { avail_width };
                 let _ = tab.webview.set_bounds(Rect {
-                    position: LogicalPosition::new(0.0, ui_h).into(),
+                    position: LogicalPosition::new(0.0, normal_ui_h).into(),
                     size: LogicalSize::new(w, content_height).into(),
                 });
                 active_url = tab.url.clone();
@@ -1601,14 +1620,14 @@ fn sync_all_views(
                 let half_w = avail_width * 0.5;
                 let h = if third_id.is_some() { content_height * 0.5 } else { content_height };
                 let _ = tab.webview.set_bounds(Rect {
-                    position: LogicalPosition::new(half_w, ui_h).into(),
+                    position: LogicalPosition::new(half_w, normal_ui_h).into(),
                     size: LogicalSize::new(half_w, h).into(),
                 });
             } else if Some(id) == third_id {
                 let half_w = avail_width * 0.5;
                 let half_h = content_height * 0.5;
                 let _ = tab.webview.set_bounds(Rect {
-                    position: LogicalPosition::new(half_w, ui_h + half_h).into(),
+                    position: LogicalPosition::new(half_w, normal_ui_h + half_h).into(),
                     size: LogicalSize::new(half_w, half_h).into(),
                 });
             } else {

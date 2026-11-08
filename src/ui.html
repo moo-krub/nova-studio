@@ -1600,10 +1600,15 @@
         const toolsPopover = document.getElementById('toolsPopover');
         function toggleToolsPopover(e) {
             e.stopPropagation();
-            toolsPopover.style.display = toolsPopover.style.display === 'flex' ? 'none' : 'flex';
+            const isOpen = toolsPopover.style.display === 'flex';
+            toolsPopover.style.display = isOpen ? 'none' : 'flex';
+            send({ cmd: 'SetUiModalOpen', open: !isOpen });
         }
         function closeToolsPopover() {
             toolsPopover.style.display = 'none';
+            if (!cmdModal || cmdModal.style.display !== 'flex') {
+                send({ cmd: 'SetUiModalOpen', open: false });
+            }
         }
 
         // =========================================================
@@ -1971,6 +1976,7 @@
         ];
 
         function openCommandPalette() {
+            send({ cmd: 'SetUiModalOpen', open: true });
             cmdModal.style.display = 'flex';
             cmdInput.value = '';
             cmdInput.focus();
@@ -1979,6 +1985,9 @@
 
         function closeCommandPalette() {
             cmdModal.style.display = 'none';
+            if (!toolsPopover || toolsPopover.style.display !== 'flex') {
+                send({ cmd: 'SetUiModalOpen', open: false });
+            }
         }
 
         function renderCommandResults(query) {

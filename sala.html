@@ -1362,9 +1362,10 @@
             type="search"
             placeholder="ค้นหาบน Google หรือพิมพ์ที่อยู่ URL แล้วกด Enter..."
             aria-label="ค้นหาจากหน้าแรก"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();handleSearch(event);}"
             autofocus
           />
-          <button type="submit">ค้นหา ↗</button>
+          <button type="submit" onclick="handleSearch(event)">ค้นหา ↗</button>
         </form>
 
         <!-- Shortcuts Section (Dynamic with Real Official Logos & Full CRUD) -->
@@ -1768,32 +1769,7 @@
       }
     }
 
-    function go(url) {
-      if (!url) return;
-      send({ cmd: 'Navigate', url: url });
-    }
-
-    function goHome() {
-      showToast('🌿 ยินดีต้อนรับสู่พื้นที่สงบ Sala');
-    }
-
-    function handleSearch(e) {
-      e.preventDefault();
-      const val = document.getElementById('homeQuery').value.trim();
-      if (val) {
-        go(val);
-      }
-    }
-
-    function sendAction(cmd) {
-      send({ cmd: cmd });
-    }
-
-    
-    // =========================================================================
-    // NOVA SETTINGS CENTER LOGIC
-    // =========================================================================
-    const SEARCH_ENGINES = {
+        const SEARCH_ENGINES = {
       google: 'https://www.google.com/search?q=',
       duckduckgo: 'https://duckduckgo.com/?q=',
       bing: 'https://www.bing.com/search?q=',
@@ -1810,6 +1786,61 @@
         localStorage.setItem('nova_search_engine', se);
         showToast('🔍 เครื่องมือค้นหาเปลี่ยนเป็น ' + se.toUpperCase() + ' แล้ว');
       }
+    }
+
+    function resolveTargetUrl(raw) {
+      if (!raw) return '';
+      let str = raw.trim();
+      if (!str) return '';
+
+      const hasScheme = str.startsWith('http://') || str.startsWith('https://');
+      if (hasScheme) return str;
+
+      const isLocal = str === 'localhost' || str.startsWith('localhost:') || str.startsWith('127.0.0.1');
+      if (isLocal) return 'http://' + str;
+
+      const isDomain = str.includes('.') && !str.includes(' ');
+      if (isDomain) return 'https://' + str;
+
+      const engine = getSearchEngine();
+      const base = SEARCH_ENGINES[engine] || SEARCH_ENGINES.google;
+      return base + encodeURIComponent(str);
+    }
+
+    function go(url) {
+      if (!url) return;
+      const target = resolveTargetUrl(url);
+      if (!target) return;
+
+      // 1. แจ้งเตือน Backend ให้รับรู้และอัปเดตสถานะเบราว์เซอร์
+      if (window.ipc && typeof window.ipc.postMessage === 'function') {
+        try {
+          window.ipc.postMessage(JSON.stringify({ cmd: 'Navigate', url: target }));
+        } catch (e) {
+          console.warn('IPC Navigate error:', e);
+        }
+      }
+
+      // 2. นำทางโดยตรงทันที รับประกันว่าหน้าเว็บเปิดไปยังผลการค้นหาเสมอ
+      window.location.href = target;
+    }
+
+    function goHome() {
+      showToast('🌿 ยินดีต้อนรับสู่พื้นที่สงบ Sala');
+    }
+
+    function handleSearch(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('homeQuery');
+      if (!input) return;
+      const val = input.value.trim();
+      if (val) {
+        go(val);
+      }
+    }
+
+    function sendAction(cmd) {
+      send({ cmd: cmd });
     }
 
     function openSettingsModal() {
@@ -1832,23 +1863,6 @@
         if (btn) btn.classList.toggle('active', t === tabName);
         if (pane) pane.classList.toggle('active', t === tabName);
       });
-    }
-
-    // Enhance handleSearch to use selected Search Engine
-    function handleSearch(e) {
-      e.preventDefault();
-      const val = document.getElementById('homeQuery').value.trim();
-      if (!val) return;
-
-      const hasScheme = val.startsWith('http://') || val.startsWith('https://');
-      const isDomain = val.includes('.') && !val.includes(' ');
-      if (hasScheme || isDomain) {
-        go(val);
-      } else {
-        const engine = getSearchEngine();
-        const searchBase = SEARCH_ENGINES[engine] || SEARCH_ENGINES.google;
-        go(searchBase + encodeURIComponent(val));
-      }
     }
 
     function openSpotlight() {

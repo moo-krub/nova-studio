@@ -1,0 +1,1140 @@
+<!doctype html>
+<html lang="th" data-theme="paper">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eee8dc">
+  <title>Sala — Browser UI Playground</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --bg: #eee8dc;
+      --chrome: #e6ddcf;
+      --surface: #fffdf7;
+      --field: #f3ede3;
+      --text: #292722;
+      --muted: #797268;
+      --accent: #d95f42;
+      --accent-2: #dfb34c;
+      --on-accent: #fffdf7;
+      --line: #d9cfc0;
+      --radius: 24px;
+      --shadow: 0 24px 70px rgb(69 54 36 / 18%);
+      --soft-shadow: 0 5px 16px rgb(69 54 36 / 8%);
+      color-scheme: light;
+      font-family: "Noto Sans Thai", "Leelawadee UI", Tahoma, system-ui, sans-serif;
+    }
+
+    html[data-theme="meadow"] {
+      --bg: #dfe8da;
+      --chrome: #d3dfcd;
+      --surface: #fbfaf1;
+      --field: #edf1e5;
+      --text: #26332a;
+      --muted: #6b796d;
+      --accent: #487658;
+      --accent-2: #d59a55;
+      --line: #c8d4c3;
+      --on-accent: #fffdf7;
+      --radius: 30px;
+      --shadow: 0 24px 70px rgb(38 65 43 / 18%);
+    }
+
+    html[data-theme="soda"] {
+      --bg: #d9e6f7;
+      --chrome: #ccdcef;
+      --surface: #fff9f1;
+      --field: #f0ebf7;
+      --text: #29273d;
+      --muted: #777289;
+      --accent: #7156c2;
+      --accent-2: #ed7e93;
+      --line: #d6d0e1;
+      --on-accent: #fff;
+      --radius: 32px;
+      --shadow: 0 24px 70px rgb(59 65 116 / 19%);
+    }
+
+    html[data-theme="zine"] {
+      --bg: #d5d3c9;
+      --chrome: #eee7d5;
+      --surface: #fffef3;
+      --field: #eee8da;
+      --text: #181813;
+      --muted: #625f55;
+      --accent: #ee5638;
+      --accent-2: #edc33e;
+      --on-accent: #181813;
+      --line: #181813;
+      --radius: 4px;
+      --shadow: 9px 9px 0 #181813;
+      --soft-shadow: 3px 3px 0 #181813;
+    }
+
+    html[data-theme="night"] {
+      --bg: #191b19;
+      --chrome: #232622;
+      --surface: #2c2f2a;
+      --field: #232622;
+      --text: #f1eee4;
+      --muted: #aaa99f;
+      --accent: #d6a66f;
+      --accent-2: #9bac91;
+      --on-accent: #211f1a;
+      --line: #464a42;
+      --radius: 20px;
+      --shadow: 0 24px 70px rgb(0 0 0 / 40%);
+      --soft-shadow: 0 5px 18px rgb(0 0 0 / 20%);
+      color-scheme: dark;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: 20px;
+      color: var(--text);
+      background: var(--bg);
+      font-family: inherit;
+      transition: background .25s, color .25s;
+    }
+
+    button, input, textarea, select { font: inherit; }
+    button, select { cursor: pointer; }
+    button { color: inherit; }
+
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible,
+    a:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    .icon-library {
+      position: absolute;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      display: block;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .browser {
+      width: 100%;
+      max-width: 1440px;
+      height: calc(100dvh - 40px);
+      min-height: 640px;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      transition: .25s;
+    }
+
+    /* แถบแท็บ */
+    .tabbar {
+      min-height: 60px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: var(--chrome);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 4px;
+      font-size: 20px;
+      font-weight: 850;
+      letter-spacing: -.5px;
+      user-select: none;
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      color: var(--on-accent);
+      background: var(--accent);
+      border-radius: 10px 14px 10px 14px;
+      transform: rotate(-7deg);
+    }
+
+    .brand-mark .icon { width: 20px; height: 20px; }
+
+    .tabs {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .tabs::-webkit-scrollbar { display: none; }
+
+    .tab {
+      min-width: 135px;
+      max-width: 220px;
+      display: flex;
+      align-items: center;
+      color: var(--muted);
+      border: 1px solid transparent;
+      border-radius: calc(var(--radius) * .45);
+      background: transparent;
+      transition: all .16s;
+    }
+
+    .tab.active {
+      color: var(--text);
+      background: var(--surface);
+      border-color: var(--line);
+      box-shadow: var(--soft-shadow);
+    }
+
+    .tab-select {
+      flex: 1;
+      min-width: 0;
+      padding: 7px 4px 7px 10px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      text-align: left;
+      background: none;
+      border: 0;
+    }
+
+    .tab-select .icon { width: 15px; height: 15px; }
+
+    .tab-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+
+    .tab-close {
+      width: 24px;
+      height: 24px;
+      margin-right: 4px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      background: transparent;
+      border: 0;
+      border-radius: 50%;
+      opacity: .65;
+    }
+
+    .tab-close:hover { background: var(--field); opacity: 1; }
+    .tab-close .icon { width: 14px; height: 14px; }
+
+    .icon-button {
+      width: 36px;
+      height: 36px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      color: var(--text);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      transition: color .16s, background .16s, transform .16s;
+    }
+
+    .icon-button:hover {
+      color: var(--accent);
+      background: var(--field);
+      border-color: var(--line);
+      transform: translateY(-1px);
+    }
+
+    .icon-button:active { transform: scale(.92); }
+    .icon-button .icon { width: 18px; height: 18px; }
+
+    .theme-control {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .theme-control select {
+      max-width: 155px;
+      padding: 6px 10px;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: 12px;
+    }
+
+    /* แถบที่อยู่เว็บ */
+    .toolbar {
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--line);
+      background: var(--chrome);
+    }
+
+    .nav-actions { display: flex; gap: 4px; }
+
+    .address {
+      flex: 1;
+      min-width: 0;
+      height: 40px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: var(--field);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+    }
+
+    .address:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+
+    .address .icon { color: var(--muted); width: 16px; height: 16px; }
+
+    .address input {
+      flex: 1;
+      min-width: 0;
+      color: var(--text);
+      background: transparent;
+      border: 0;
+      outline: 0;
+      font-size: 13px;
+    }
+
+    input::placeholder, textarea::placeholder { color: var(--muted); }
+
+    .shuffle {
+      min-height: 36px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: 12px;
+      white-space: nowrap;
+      transition: all .16s;
+    }
+
+    .shuffle:hover {
+      color: var(--accent);
+      background: var(--field);
+      border-color: var(--accent);
+    }
+
+    /* เนื้อหาหลัก */
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 60px minmax(0, 1fr);
+    }
+
+    .rail {
+      padding: 16px 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-right: 1px solid var(--line);
+      background: var(--chrome);
+    }
+
+    .rail-group { display: grid; gap: 8px; }
+
+    .rail-button {
+      width: 44px;
+      height: 44px;
+      padding: 2px;
+      display: grid;
+      place-items: center;
+      margin: auto;
+      background: transparent;
+      border: 0;
+    }
+
+    .icon-shell {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      border: 1px solid transparent;
+      border-radius: 10px 14px 10px 14px;
+      transition: color .18s, background .18s, transform .18s;
+    }
+
+    .rail-button:hover .icon-shell {
+      color: var(--accent);
+      background: var(--field);
+      border-color: var(--line);
+      transform: translateY(-2px);
+    }
+
+    .rail-button.active .icon-shell {
+      color: var(--on-accent);
+      background: var(--accent);
+      border-color: var(--accent);
+      transform: rotate(-3deg);
+    }
+
+    .page {
+      overflow: auto;
+      padding: clamp(24px, 3.5vw, 44px);
+      background:
+        radial-gradient(circle at 95% 5%,
+          color-mix(in srgb, var(--accent-2) 14%, transparent),
+          transparent 28%);
+    }
+
+    .hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(32px, 3.8vw, 54px);
+      line-height: 1.15;
+      letter-spacing: -.03em;
+    }
+
+    .hero h1 span { color: var(--accent); }
+
+    .stamp {
+      width: 105px;
+      height: 105px;
+      flex: 0 0 auto;
+      display: grid;
+      place-content: center;
+      text-align: center;
+      border: 1.5px dashed var(--accent);
+      border-radius: 50%;
+      transform: rotate(8deg);
+    }
+
+    .stamp small { color: var(--muted); font-size: 11px; }
+    .stamp strong {
+      color: var(--accent);
+      font: italic 22px Georgia, serif;
+    }
+
+    .big-search {
+      max-width: 860px;
+      min-height: 56px;
+      margin: 26px 0 32px;
+      padding: 6px 6px 6px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--field);
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) * .7);
+      box-shadow: var(--soft-shadow);
+    }
+
+    .big-search input {
+      flex: 1;
+      min-width: 0;
+      color: var(--text);
+      background: transparent;
+      border: 0;
+      outline: 0;
+      font-size: 15px;
+    }
+
+    .big-search button {
+      min-height: 42px;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--on-accent);
+      background: var(--accent);
+      border: 0;
+      border-radius: calc(var(--radius) * .5);
+      font-weight: 700;
+      font-size: 14px;
+      transition: transform .16s, opacity .16s;
+    }
+
+    .big-search button:hover { opacity: .92; transform: scale(1.02); }
+
+    .section-heading {
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-heading h2, .panel h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .shortcut-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .shortcut {
+      position: relative;
+      min-height: 125px;
+      padding: 16px;
+      color: var(--text);
+      text-decoration: none;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) * .6);
+      transition: transform .18s, box-shadow .18s, border-color .18s;
+    }
+
+    .shortcut:hover {
+      border-color: var(--accent);
+      box-shadow: var(--soft-shadow);
+      transform: translateY(-3px);
+    }
+
+    .shortcut .tile-icon {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 12px;
+      color: var(--accent);
+      background: var(--field);
+      border: 1px solid var(--line);
+      border-radius: 10px 14px 10px 14px;
+    }
+
+    .shortcut strong { display: block; font-size: 14px; font-weight: 700; }
+    .shortcut small { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+
+    .shortcut .arrow {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      color: var(--muted);
+      width: 14px;
+      height: 14px;
+    }
+
+    .bottom-grid {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: 1.3fr .85fr;
+      gap: 16px;
+    }
+
+    .panel {
+      padding: 18px;
+      background: var(--field);
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) * .6);
+    }
+
+    .panel h2 { margin: 0 0 12px; }
+
+    .recent-item {
+      width: 100%;
+      padding: 10px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+      text-align: left;
+      background: transparent;
+      border: 0;
+      border-top: 1px solid var(--line);
+      font-size: 13px;
+      transition: color .16s;
+    }
+
+    .recent-item:hover { color: var(--accent); }
+
+    .recent-item .dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-2);
+      border-radius: 50%;
+    }
+
+    .recent-item small {
+      margin-left: auto;
+      color: var(--muted);
+      white-space: nowrap;
+      font-size: 11px;
+    }
+
+    .note-panel {
+      background: color-mix(in srgb, var(--accent-2) 12%, var(--surface));
+    }
+
+    .note-panel textarea {
+      width: 100%;
+      min-height: 115px;
+      padding: 0;
+      resize: vertical;
+      color: var(--text);
+      background: transparent;
+      border: 0;
+      outline: 0;
+      line-height: 1.7;
+      font-size: 13px;
+    }
+
+    .save-status {
+      min-height: 16px;
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    footer {
+      margin-top: 24px;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      z-index: 30;
+      max-width: calc(100vw - 32px);
+      padding: 10px 18px;
+      color: var(--bg);
+      background: var(--text);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 15px);
+      transition: .2s;
+      font-size: 13px;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    @media (max-width: 900px) {
+      .shortcut-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .bottom-grid { grid-template-columns: 1fr; }
+      .stamp { display: none; }
+    }
+
+    @media (max-width: 640px) {
+      body { padding: 0; }
+      .browser { height: 100dvh; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
+      .rail { display: none; }
+      .workspace { grid-template-columns: 1fr; }
+      .page { padding: 20px 16px; }
+      .theme-control { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- คลังไอคอน SVG วาดเองทั้งหมด (No Emoji) -->
+  <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <symbol id="i-logo" viewBox="0 0 24 24">
+        <path d="M12 2.8c.5 5.2 2.3 8 7.1 9.1-4.8 1.2-6.6 4-7.1 8.4-.5-4.4-2.3-7.2-7.2-8.4C9.7 10.8 11.5 8 12 2.8Z"/>
+        <path d="M19 3.5v3M17.5 5h3"/>
+      </symbol>
+
+      <symbol id="i-home" viewBox="0 0 24 24">
+        <path d="m3.5 10.3 8.5-6.5 8.5 6.5"/>
+        <path d="M5.8 9.2v9.4c0 .9.6 1.4 1.4 1.4h9.6c.8 0 1.4-.5 1.4-1.4V9.2"/>
+        <path d="M10 20v-5.2c0-.6.4-1 1-1h2c.6 0 1 .4 1 1V20"/>
+      </symbol>
+
+      <symbol id="i-page" viewBox="0 0 24 24">
+        <path d="M6.5 3.5h7l4 4v13h-11z"/>
+        <path d="M13.5 3.5v4h4M9 12h6M9 16h6"/>
+      </symbol>
+
+      <symbol id="i-back" viewBox="0 0 24 24">
+        <path d="M19 12H5.5M10.8 5.8 5 12l5.8 6"/>
+      </symbol>
+
+      <symbol id="i-forward" viewBox="0 0 24 24">
+        <path d="M5 12h13.5M13.2 5.8 19 12l-5.8 6"/>
+      </symbol>
+
+      <symbol id="i-reload" viewBox="0 0 24 24">
+        <path d="M19.2 8.2A8 8 0 0 0 5 7.5L3.2 9.5"/>
+        <path d="M3.2 5.4v4.3h4.3M4.8 15.8A8 8 0 0 0 19 16.5l1.8-2M20.8 18.6v-4.3h-4.3"/>
+      </symbol>
+
+      <symbol id="i-search" viewBox="0 0 24 24">
+        <circle cx="10.5" cy="10.5" r="6.5"/>
+        <path d="m15.5 15.5 4.5 4.5"/>
+      </symbol>
+
+      <symbol id="i-plus" viewBox="0 0 24 24">
+        <path d="M12 5v14M5 12h14"/>
+      </symbol>
+
+      <symbol id="i-close" viewBox="0 0 24 24">
+        <path d="m7 7 10 10M17 7 7 17"/>
+      </symbol>
+
+      <symbol id="i-bookmark" viewBox="0 0 24 24">
+        <path d="M6.6 4.1c0-.6.5-1.1 1.1-1.4h8.6c.7 0 1.2.5 1.2 1.2v16l-6.2-3.8L6 20.2V4.1Z"/>
+        <path d="M9.7 7.2h4.8"/>
+      </symbol>
+
+      <symbol id="i-book" viewBox="0 0 24 24">
+        <path d="M12 6.1C10.2 4.6 7.9 4.1 4.3 4.6v14.2c3.1-.4 5.8.1 7.7 1.7V6.1Z"/>
+        <path d="M12 6.1c1.8-1.5 4.1-2 7.7-1.5v14.2c-3.1-.4-5.9.1-7.7 1.7M7.2 8.6l2.3.2M14.5 8.8l2.3-.3"/>
+      </symbol>
+
+      <symbol id="i-download" viewBox="0 0 24 24">
+        <path d="M12 3.8v10.7M7.8 10.7l4.2 4.3 4.2-4.3M4.4 15.8v3.2c0 .9.7 1.6 1.6 1.6h12c.9 0 1.6-.7 1.6-1.6v-3.2"/>
+      </symbol>
+
+      <symbol id="i-settings" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </symbol>
+
+      <symbol id="i-extension" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="3"/>
+        <path d="M12 3v18"/>
+      </symbol>
+
+      <symbol id="i-spark" viewBox="0 0 24 24">
+        <path d="M12 2.8c.5 5.2 2.3 8 7.1 9.1-4.8 1.2-6.6 4-7.1 8.4-.5-4.4-2.3-7.2-7.2-8.4C9.7 10.8 11.5 8 12 2.8ZM19 3.5v3M17.5 5h3"/>
+      </symbol>
+
+      <symbol id="i-arrow" viewBox="0 0 24 24">
+        <path d="M6 18 18 6M8 6h10v10"/>
+      </symbol>
+
+      <symbol id="i-lock" viewBox="0 0 24 24">
+        <rect x="5" y="10" width="14" height="11" rx="3"/>
+        <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+      </symbol>
+
+      <symbol id="i-note" viewBox="0 0 24 24">
+        <path d="M5 4.5h14v15H5zM8 8.5h8M8 12.5h8M8 16.5h5"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="browser">
+    <!-- แถบแท็บด้านบน -->
+    <header class="tabbar">
+      <div class="brand">
+        <span class="brand-mark">
+          <svg class="icon" aria-hidden="true"><use href="#i-logo"/></svg>
+        </span>
+        <span>sala.</span>
+      </div>
+
+      <div class="tabs" id="tabs" aria-label="แท็บที่เปิดอยู่"></div>
+
+      <button class="icon-button" id="addTab" title="เพิ่มแท็บใหม่" aria-label="เพิ่มแท็บ">
+        <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
+      </button>
+
+      <button class="shuffle" id="shuffleBtn" title="สุ่มธีมสีใหม่">
+        <svg class="icon" aria-hidden="true" style="width:16px;height:16px"><use href="#i-spark"/></svg>
+        <span>สุ่มลุค</span>
+      </button>
+
+      <label class="theme-control">
+        <select id="themeSelect" aria-label="เลือกสไตล์เบราว์เซอร์">
+          <option value="paper">Paper · กระดาษ</option>
+          <option value="meadow">Meadow · สวน</option>
+          <option value="soda">Soda · สดใส</option>
+          <option value="zine">Zine · สิ่งพิมพ์</option>
+          <option value="night">Night · โคมไฟ</option>
+        </select>
+      </label>
+    </header>
+
+    <!-- แถบที่อยู่เว็บ -->
+    <div class="toolbar">
+      <div class="nav-actions">
+        <button class="icon-button" id="backBtn" title="ย้อนกลับ" aria-label="ย้อนกลับ">
+          <svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>
+        </button>
+
+        <button class="icon-button" id="forwardBtn" title="ไปข้างหน้า" aria-label="ไปข้างหน้า">
+          <svg class="icon" aria-hidden="true"><use href="#i-forward"/></svg>
+        </button>
+
+        <button class="icon-button" id="refreshBtn" title="รีเฟรชหน้านี้" aria-label="รีเฟรช">
+          <svg class="icon" aria-hidden="true"><use href="#i-reload"/></svg>
+        </button>
+      </div>
+
+      <form class="address" id="addressForm">
+        <svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>
+        <input id="addressInput" type="text" autocomplete="off" placeholder="พิมพ์ค้นหา หรือใส่ที่อยู่เว็บ URL แล้วกด Enter..." />
+      </form>
+    </div>
+
+    <!-- พื้นที่ทำงานหลัก -->
+    <div class="workspace">
+      <!-- Rail Navigation ซ้ายมือ -->
+      <nav class="rail" aria-label="เมนูเบราว์เซอร์">
+        <div class="rail-group">
+          <button class="rail-button active" title="หน้าแรก" onclick="showToast('หน้าแรก Sala Spatial')">
+            <span class="icon-shell"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg></span>
+          </button>
+          <button class="rail-button" title="รายการโปรดและประวัติ" onclick="showToast('เปิดรายการโปรด')">
+            <span class="icon-shell"><svg class="icon" aria-hidden="true"><use href="#i-bookmark"/></svg></span>
+          </button>
+          <button class="rail-button" title="โหมดอ่านบทความ (Reader Mode)" onclick="showToast('เปิดโหมดอ่านบทความ')">
+            <span class="icon-shell"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg></span>
+          </button>
+          <button class="rail-button" title="ไฟล์ดาวน์โหลด" onclick="showToast('เปิดโฟลเดอร์ดาวน์โหลด')">
+            <span class="icon-shell"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg></span>
+          </button>
+        </div>
+
+        <div class="rail-group">
+          <button class="rail-button" title="สลับโหมดแท็บแนวตั้ง" onclick="showToast('สลับโหมดการแสดงผลแท็บ')">
+            <span class="icon-shell"><svg class="icon" aria-hidden="true"><use href="#i-extension"/></svg></span>
+          </button>
+          <button class="rail-button" title="ศูนย์การตั้งค่า" onclick="showToast('ศูนย์การตั้งค่า Sala')">
+            <span class="icon-shell"><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg></span>
+          </button>
+        </div>
+      </nav>
+
+      <!-- เนื้อหาหน้าเว็บ New Tab -->
+      <main class="page">
+        <!-- Hero Section -->
+        <section class="hero">
+          <div>
+            <p class="eyebrow" id="dateLabel">วันจันทร์ที่ 9 พฤศจิกายน 2569</p>
+            <h1><span>สวัสดี</span><br />วันนี้อยากไปไหนดี?</h1>
+          </div>
+          <div class="stamp">
+            <small>TAKE IT</small>
+            <strong>slow.</strong>
+          </div>
+        </section>
+
+        <!-- Big Search Form -->
+        <form class="big-search" id="bigSearchForm">
+          <svg class="icon" aria-hidden="true" style="color:var(--muted);width:20px;height:20px;"><use href="#i-search"/></svg>
+          <input type="text" id="bigSearchInput" placeholder="ค้นหาบน Google หรือพิมพ์คำสั่งด่วน..." autocomplete="off" />
+          <button type="submit">ค้นหา</button>
+        </form>
+
+        <!-- ทางลัด -->
+        <div class="section-heading">
+          <h2>ทางลัดของคุณ</h2>
+        </div>
+
+        <div class="shortcut-grid">
+          <a class="shortcut" href="https://www.google.com" target="_blank">
+            <span class="tile-icon"><svg class="icon"><use href="#i-search"/></svg></span>
+            <strong>Google</strong>
+            <small>ค้นหาข้อมูล ข่าวสาร และทุกสิ่ง</small>
+            <svg class="arrow icon"><use href="#i-arrow"/></svg>
+          </a>
+
+          <a class="shortcut" href="https://www.youtube.com" target="_blank">
+            <span class="tile-icon"><svg class="icon"><use href="#i-spark"/></svg></span>
+            <strong>YouTube</strong>
+            <small>ชมวิดีโอ สตรีมสด และเพลงโปรด</small>
+            <svg class="arrow icon"><use href="#i-arrow"/></svg>
+          </a>
+
+          <a class="shortcut" href="https://github.com" target="_blank">
+            <span class="tile-icon"><svg class="icon"><use href="#i-page"/></svg></span>
+            <strong>GitHub</strong>
+            <small>คลังโค้ดและโปรเจกต์โอเพนซอร์ส</small>
+            <svg class="arrow icon"><use href="#i-arrow"/></svg>
+          </a>
+
+          <a class="shortcut" href="https://chatgpt.com" target="_blank">
+            <span class="tile-icon"><svg class="icon"><use href="#i-logo"/></svg></span>
+            <strong>ChatGPT</strong>
+            <small>คู่หูปัญญาประดิษฐ์ช่วยงานและเรียนรู้</small>
+            <svg class="arrow icon"><use href="#i-arrow"/></svg>
+          </a>
+
+          <a class="shortcut" href="https://th.wikipedia.org" target="_blank">
+            <span class="tile-icon"><svg class="icon"><use href="#i-book"/></svg></span>
+            <strong>Wikipedia</strong>
+            <small>สารานุกรมเสรีภาษาไทย</small>
+            <svg class="arrow icon"><use href="#i-arrow"/></svg>
+          </a>
+
+          <a class="shortcut" href="https://www.reddit.com" target="_blank">
+            <span class="tile-icon"><svg class="icon"><use href="#i-spark"/></svg></span>
+            <strong>Reddit</strong>
+            <small>ชุมชนสนทนาและกระทู้ทั่วโลก</small>
+            <svg class="arrow icon"><use href="#i-arrow"/></svg>
+          </a>
+
+          <a class="shortcut" href="https://x.com" target="_blank">
+            <span class="tile-icon"><svg class="icon"><use href="#i-arrow"/></svg></span>
+            <strong>X (Twitter)</strong>
+            <small>เกาะติดเทรนด์และข่าวสารเรียลไทม์</small>
+            <svg class="arrow icon"><use href="#i-arrow"/></svg>
+          </a>
+
+          <a class="shortcut" href="https://facebook.com" target="_blank">
+            <span class="tile-icon"><svg class="icon"><use href="#i-bookmark"/></svg></span>
+            <strong>Facebook</strong>
+            <small>เชื่อมต่อกับเพื่อนและกลุ่มสังคม</small>
+            <svg class="arrow icon"><use href="#i-arrow"/></svg>
+          </a>
+        </div>
+
+        <!-- กริดด้านล่าง: แหล่งเรียนรู้ & โน้ตด่วน -->
+        <div class="bottom-grid">
+          <div class="panel">
+            <h2>แหล่งเรียนรู้และเครื่องมือแนะนำ</h2>
+            <button class="recent-item" onclick="openUrl('https://www.rust-lang.org')">
+              <span class="dot"></span>
+              <span>The Rust Programming Language</span>
+              <small>rust-lang.org</small>
+            </button>
+            <button class="recent-item" onclick="openUrl('https://developer.mozilla.org')">
+              <span class="dot"></span>
+              <span>MDN Web Docs — เอกสารและมาตรฐานเว็บ</span>
+              <small>mozilla.org</small>
+            </button>
+            <button class="recent-item" onclick="openUrl('https://threejs.org')">
+              <span class="dot"></span>
+              <span>Three.js — 3D WebGL Canvas</span>
+              <small>threejs.org</small>
+            </button>
+            <button class="recent-item" onclick="openUrl('https://github.com/moo-krub/nova-studio')">
+              <span class="dot"></span>
+              <span>Nova Studio Repository — ซอร์สโค้ดทางการ</span>
+              <small>github.com</small>
+            </button>
+          </div>
+
+          <div class="panel note-panel">
+            <h2>โน้ตด่วนของคุณ</h2>
+            <textarea id="quickNote" placeholder="พิมพ์บันทึกความคิด ไอเดีย หรือสิ่งที่ต้องทำวันนี้ที่นี่... ระบบจะบันทึกให้อัตโนมัติ"></textarea>
+            <div class="save-status" id="saveStatus">พร้อมบันทึกออโต้</div>
+          </div>
+        </div>
+
+        <footer>
+          Sala Spatial Edition • Vector SVG Icon System • Made for Nova Studio
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // Theme Management
+    const themeSelect = document.getElementById('themeSelect');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const themes = ['paper', 'meadow', 'soda', 'zine', 'night'];
+
+    function setTheme(th) {
+      document.documentElement.setAttribute('data-theme', th);
+      themeSelect.value = th;
+      localStorage.setItem('sala_theme', th);
+      showToast('เปลี่ยนธีมเป็น: ' + th.toUpperCase());
+    }
+
+    const savedTheme = localStorage.getItem('sala_theme') || 'paper';
+    setTheme(savedTheme);
+
+    themeSelect.addEventListener('change', (e) => setTheme(e.target.value));
+    shuffleBtn.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const filtered = themes.filter(t => t !== current);
+      const chosen = filtered[Math.floor(Math.random() * filtered.length)];
+      setTheme(chosen);
+    });
+
+    // Tab Management
+    let tabs = [
+      { id: 1, title: 'หน้าแรก Sala', url: '' },
+      { id: 2, title: 'GitHub', url: 'https://github.com/moo-krub/nova-studio' }
+    ];
+    let activeTabId = 1;
+    let nextTabId = 3;
+
+    function renderTabs() {
+      const container = document.getElementById('tabs');
+      container.innerHTML = '';
+      tabs.forEach(tab => {
+        const el = document.createElement('div');
+        el.className = 'tab' + (tab.id === activeTabId ? ' active' : '');
+        el.innerHTML = `
+          <button class="tab-select">
+            <svg class="icon"><use href="#i-page"/></svg>
+            <span class="tab-title">${tab.title}</span>
+          </button>
+          ${tabs.length > 1 ? `
+            <button class="tab-close" title="ปิดแท็บ">
+              <svg class="icon"><use href="#i-close"/></svg>
+            </button>
+          ` : ''}
+        `;
+
+        el.querySelector('.tab-select').onclick = () => {
+          activeTabId = tab.id;
+          document.getElementById('addressInput').value = tab.url;
+          renderTabs();
+        };
+
+        const closeBtn = el.querySelector('.tab-close');
+        if (closeBtn) {
+          closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            closeTab(tab.id);
+          };
+        }
+
+        container.appendChild(el);
+      });
+    }
+
+    function addTab(title = 'แท็บใหม่', url = '') {
+      const newTab = { id: nextTabId++, title, url };
+      tabs.push(newTab);
+      activeTabId = newTab.id;
+      document.getElementById('addressInput').value = url;
+      renderTabs();
+      showToast('เปิดแท็บใหม่แล้ว');
+    }
+
+    function closeTab(id) {
+      if (tabs.length <= 1) return;
+      const idx = tabs.findIndex(t => t.id === id);
+      tabs = tabs.filter(t => t.id !== id);
+      if (activeTabId === id) {
+        activeTabId = tabs[Math.max(0, idx - 1)].id;
+      }
+      renderTabs();
+    }
+
+    document.getElementById('addTab').onclick = () => addTab();
+
+    // Navigation & Forms
+    function openUrl(url) {
+      window.open(url, '_blank');
+      showToast('กำลังเปิด: ' + url);
+    }
+
+    document.getElementById('addressForm').onsubmit = (e) => {
+      e.preventDefault();
+      const val = document.getElementById('addressInput').value.trim();
+      if (!val) return;
+      let target = val;
+      if (val.includes('.') && !val.includes(' ')) {
+        if (!val.startsWith('http://') && !val.startsWith('https://')) target = 'https://' + val;
+      } else {
+        target = 'https://www.google.com/search?q=' + encodeURIComponent(val);
+      }
+      openUrl(target);
+    };
+
+    document.getElementById('bigSearchForm').onsubmit = (e) => {
+      e.preventDefault();
+      const val = document.getElementById('bigSearchInput').value.trim();
+      if (!val) return;
+      openUrl('https://www.google.com/search?q=' + encodeURIComponent(val));
+    };
+
+    document.getElementById('refreshBtn').onclick = () => showToast('รีเฟรชหน้าเว็บเรียบร้อย');
+    document.getElementById('backBtn').onclick = () => showToast('ย้อนกลับ');
+    document.getElementById('forwardBtn').onclick = () => showToast('ไปข้างหน้า');
+
+    // Quick Note Auto-Save
+    const quickNote = document.getElementById('quickNote');
+    const saveStatus = document.getElementById('saveStatus');
+    quickNote.value = localStorage.getItem('sala_notes') || '';
+
+    quickNote.addEventListener('input', () => {
+      saveStatus.textContent = 'กำลังบันทึก...';
+      localStorage.setItem('sala_notes', quickNote.value);
+      setTimeout(() => {
+        saveStatus.textContent = 'บันทึกอัตโนมัติแล้ว ✓';
+      }, 300);
+    });
+
+    // Toast
+    let toastTimer;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+    }
+
+    // Initialize Date Label
+    const now = new Date();
+    const days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+    const months = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+    const dStr = `วัน${days[now.getDay()]}ที่ ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear() + 543}`;
+    const dateLabel = document.getElementById('dateLabel');
+    if (dateLabel) dateLabel.textContent = dStr;
+
+    renderTabs();
+  </script>
+</body>
+</html>

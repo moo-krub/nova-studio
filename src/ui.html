@@ -1269,9 +1269,250 @@
             transition: none !important;
         }
     }
+
+    /* ============================================================
+       NOVA REFINED UI & SVG GLYPH STANDARD + RESPONSIVE
+       ============================================================ */
+    .nv-ic {
+        width: 14px;
+        height: 14px;
+        display: inline-block;
+        vertical-align: middle;
+        flex: 0 0 auto;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.65;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        pointer-events: none;
+    }
+
+    /* ธีมสว่าง: ความคมชัดของตัวหนังสือและปุ่ม */
+    body.theme-paper,
+    body.theme-meadow,
+    body.theme-soda,
+    body.theme-zine {
+        --tab-hover-bg: rgba(30, 30, 25, .055);
+    }
+
+    body.theme-paper .brand-title,
+    body.theme-meadow .brand-title,
+    body.theme-soda .brand-title,
+    body.theme-zine .brand-title {
+        background: none;
+        -webkit-text-fill-color: var(--text-primary);
+        color: var(--text-primary);
+    }
+
+    body.theme-paper .ws-btn.active,
+    body.theme-meadow .ws-btn.active,
+    body.theme-soda .ws-btn.active,
+    body.theme-zine .ws-btn.active {
+        color: #fff;
+    }
+
+    body.theme-paper .cmd-card,
+    body.theme-meadow .cmd-card,
+    body.theme-soda .cmd-card,
+    body.theme-zine .cmd-card {
+        background: var(--bg-elevated);
+    }
+
+    body.theme-paper .omnibox:focus-within,
+    body.theme-meadow .omnibox:focus-within,
+    body.theme-soda .omnibox:focus-within {
+        background: var(--bg-omnibox);
+        box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    /* Context Menu item with icons */
+    .ctx-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Responsive Rules for Small Displays */
+    @media (max-width: 980px) {
+        .brand-title,
+        .top-right-utils .util-pill:not(#updatePill) span:not(.util-badge),
+        #gridBtnLabel {
+            display: none;
+        }
+        .top-right-utils { gap: 3px; }
+        .util-pill { padding: 0 6px; }
+    }
+
+    @media (max-width: 720px) {
+        .tier-divider,
+        .top-right-utils { display: none; }
+        .tab { min-width: 104px; }
+        .shield-badge { padding: 3px 5px; }
+        .nav-btn { padding: 0 8px; }
+        .nav-btn-ai span:not(.util-badge),
+        #gridBtnLabel { display: none; }
+        .tools-popover {
+            top: 82px;
+            left: 10px;
+            right: 10px;
+            width: auto;
+            max-height: calc(100dvh - 100px);
+            overflow-y: auto;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .ws-group { display: none; }
+        .brand-title,
+        .nav-right-controls .nav-btn > span:not(.util-badge),
+        .shield-badge { display: none; }
+        .omnibox { padding-left: 4px; }
+        .nav-tier { padding-inline: 6px; gap: 4px; }
+        .nav-btn { padding-inline: 8px; }
+        .nav-btn-ai span:not(.util-badge) { display: none; }
+    }
+
 </style>
 </head>
 <body>
+
+    <!-- ============================================================
+         NOVA REFINED SVG ICON LIBRARY (SYSTEM-WIDE VECTOR GLYPHS)
+         ============================================================ -->
+    <svg width="0" height="0" class="icon-library" style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
+        <defs>
+            <symbol id="nv-logo" viewBox="0 0 24 24">
+                <path d="M5 18V6l14 12V6" />
+                <path d="M4 21h16" opacity=".45"/>
+            </symbol>
+            <symbol id="nv-home" viewBox="0 0 24 24">
+                <path d="m3.5 10.5 8.5-7 8.5 7M6 9v10h12V9M10 19v-5h4v5"/>
+            </symbol>
+            <symbol id="nv-work" viewBox="0 0 24 24">
+                <rect x="3" y="6" width="18" height="14" rx="3"/>
+                <path d="M9 6V4h6v2M3 12h18M10 12h4"/>
+            </symbol>
+            <symbol id="nv-spark" viewBox="0 0 24 24">
+                <path d="M12 2.8c.6 5.2 2.7 7.4 7.8 8.2-4.8 1.1-7.2 3.9-7.8 8.4-.6-4.4-3-7.3-7.2-8.4 5.1-1.1 6.6-3.9 7.2-8.2Z"/>
+                <path d="M19 3v3M17.5 4.5h3"/>
+            </symbol>
+            <symbol id="nv-search" viewBox="0 0 24 24">
+                <circle cx="10.5" cy="10.5" r="6.2"/>
+                <path d="m15 15 5 5M7.5 8.4c.7-1.2 1.8-1.7 3.2-1.7"/>
+            </symbol>
+            <symbol id="nv-back" viewBox="0 0 24 24">
+                <path d="M19 12H5M10 5.5 4.5 12l5.5 6"/>
+            </symbol>
+            <symbol id="nv-forward" viewBox="0 0 24 24">
+                <path d="M5 12h13.5M13.2 5.8 19 12l-5.8 6"/>
+            </symbol>
+            <symbol id="nv-reload" viewBox="0 0 24 24">
+                <path d="M19.5 8A8 8 0 1 0 20 15M19.5 3v5h-5"/>
+            </symbol>
+            <symbol id="nv-plus" viewBox="0 0 24 24">
+                <path d="M12 5v14M5 12h14"/>
+            </symbol>
+            <symbol id="nv-close" viewBox="0 0 24 24">
+                <path d="m7 7 10 10M17 7 7 17"/>
+            </symbol>
+            <symbol id="nv-shield" viewBox="0 0 24 24">
+                <path d="M12 3 5 6v5c0 4.5 2.6 8 7 10 4.4-1 7-5.5 7-10V6l-7-3Z"/>
+                <path d="m9 12 2 2 4-4"/>
+            </symbol>
+            <symbol id="nv-lock" viewBox="0 0 24 24">
+                <rect x="5" y="10" width="14" height="11" rx="3"/>
+                <path d="M8 11V8a4 4 0 0 1 8 0v3M12 14v2"/>
+            </symbol>
+            <symbol id="nv-translate" viewBox="0 0 24 24">
+                <path d="M4 5h8M7.5 3v2M5 4c.8 4 3 6.5 6 6.5M10 4c-1 3-3 5-6 6M11 20l4-9 4 9M12 13h4"/>
+            </symbol>
+            <symbol id="nv-star" viewBox="0 0 24 24">
+                <path d="m12 3 2.5 5.4 5.9.7-4.3 4.1 1.1 5.8-5.2-3-5.2 3 1.1-5.8L3.5 9.1l5.6-.7L12 3Z"/>
+            </symbol>
+            <symbol id="nv-bolt" viewBox="0 0 24 24">
+                <path d="m13 2-7 11h5l-1 9 8-11h-6l1-9Z"/>
+            </symbol>
+            <symbol id="nv-grid" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                <path d="M12 3v18"/>
+            </symbol>
+            <symbol id="nv-incognito" viewBox="0 0 24 24">
+                <path d="M4 10c1-4 3.5-6 8-6s8 2 8 8M3 12h18M5 13v3M19 13v3"/>
+                <circle cx="7" cy="17" r="3"/>
+                <circle cx="17" cy="17" r="3"/>
+            </symbol>
+            <symbol id="nv-snow" viewBox="0 0 24 24">
+                <path d="M12 2v18M2 7l20 10M2 17 22 7M8 4l4 3 4-3M8 21l4-3 4 3"/>
+            </symbol>
+            <symbol id="nv-book" viewBox="0 0 24 24">
+                <path d="M12 6C9 4 6 4 3 5v14c4-.5 6 0 9 2 2-2 5-2 9-2V5c-4-.5-7 0-9 2v12"/>
+            </symbol>
+            <symbol id="nv-settings" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </symbol>
+            <symbol id="nv-globe" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9"/>
+                <ellipse cx="12" cy="12" rx="4" ry="9"/>
+                <path d="M3 12h18"/>
+            </symbol>
+            <symbol id="nv-layout" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                <path d="M9 3v18M15 3v18"/>
+            </symbol>
+            <symbol id="nv-restore" viewBox="0 0 24 24">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+            </symbol>
+            <symbol id="nv-audio" viewBox="0 0 24 24">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/>
+            </symbol>
+            <symbol id="nv-pin" viewBox="0 0 24 24">
+                <path d="M12 17v5M5 7l3-3 7 7-3 3M9 13l-4 4M15 7l4 4"/>
+            </symbol>
+            <symbol id="nv-mute" viewBox="0 0 24 24">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <line x1="23" y1="9" x2="17" y2="15"/>
+                <line x1="17" y1="9" x2="23" y2="15"/>
+            </symbol>
+            <symbol id="nv-copy" viewBox="0 0 24 24">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </symbol>
+            <symbol id="nv-offline" viewBox="0 0 24 24">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+            </symbol>
+            <symbol id="nv-chart" viewBox="0 0 24 24">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+            </symbol>
+            <symbol id="nv-ghost" viewBox="0 0 24 24">
+                <path d="M9 10h.01M15 10h.01M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/>
+            </symbol>
+            <symbol id="nv-rocket" viewBox="0 0 24 24">
+                <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+                <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+                <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+                <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+            </symbol>
+            <symbol id="nv-trash" viewBox="0 0 24 24">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </symbol>
+            <symbol id="nv-split" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                <line x1="12" y1="3" x2="12" y2="21"/>
+            </symbol>
+            <symbol id="nv-paint" viewBox="0 0 24 24">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </symbol>
+        </defs>
+    </svg>
+
 
     <!-- =====================================================================
          TIER 1: SPATIAL WORKSPACES & DYNAMIC TAB TRACK
@@ -1369,7 +1610,7 @@
         <div class="omnibox-wrapper">
             <div class="omnibox">
                 <!-- ป้ายความปลอดภัยของการเชื่อมต่อ -->
-                <span id="secBadge" class="sec-badge" title="สถานะการเชื่อมต่อ">🔒</span>
+                <span id="secBadge" class="sec-badge" title="สถานะการเชื่อมต่อ"><svg class="nv-ic" style="width:13px;height:13px;"><use href="#nv-lock"></use></svg></span>
 
                 <!-- Privacy Shield Pill -->
                 <span id="adBadge" class="shield-badge" onclick="send({cmd:'ToggleAdBlock'})" title="คลิกเพื่อ เปิด/ปิด Deep AdGuard">
@@ -1419,21 +1660,21 @@
          ===================================================================== -->
     <div id="toolsPopover" class="tools-popover" onclick="event.stopPropagation()">
         <div class="popover-header">
-            <span>⚡ Nova Studio Boost & Tools</span>
-            <span style="cursor:pointer;color:var(--text-secondary);" onclick=" CycleThemePreview()" title="สลับธีมสี">🎨 Theme</span>
+            <span><svg class="nv-ic" style="width:14px;height:14px;color:var(--accent);"><use href="#nv-bolt"></use></svg> Nova Studio Boost & Tools</span>
+            <span style="cursor:pointer;color:var(--text-secondary);" onclick=" CycleThemePreview()" title="สลับธีมสี"><svg class="nv-ic" style="width:13px;height:13px;"><use href="#nv-paint"></use></svg> Theme</span>
         </div>
         <div class="bento-grid">
             <button class="bento-card" onclick="send({cmd:'SetAsDefaultBrowser'}); closeToolsPopover();">
                 <div class="bento-top">
                     <span>Default App</span>
-                    <span style="color:#34d399;">🌐</span>
+                    <svg class="nv-ic" style="width:16px;height:16px;color:#34d399;"><use href="#nv-globe"></use></svg>
                 </div>
                 <span class="bento-sub">ตั้งเป็นเบราว์เซอร์หลัก</span>
             </button>
             <button class="bento-card" onclick="send({cmd:'ToggleVerticalTabs'}); closeToolsPopover();">
                 <div class="bento-top">
                     <span>Vertical Tabs</span>
-                    <span style="color:#38bdf8;">📑</span>
+                    <svg class="nv-ic" style="width:16px;height:16px;color:#38bdf8;"><use href="#nv-layout"></use></svg>
                 </div>
                 <span class="bento-sub">สลับแท็บแนวตั้ง/แนวนอน</span>
             </button>
@@ -1447,7 +1688,7 @@
             <button class="bento-card" onclick="send({cmd:'BoostAudio', gain:2.5}); showToast('🔊 เปิดบูสต์เสียง 250% แล้ว');">
                 <div class="bento-top">
                     <span>Audio 250%</span>
-                    <span style="color:#818cf8;">🔊</span>
+                    <svg class="nv-ic" style="width:16px;height:16px;color:#818cf8;"><use href="#nv-audio"></use></svg>
                 </div>
                 <span class="bento-sub">ขยายเสียงลำโพงพิเศษ</span>
             </button>
@@ -1461,35 +1702,35 @@
             <button class="bento-card" onclick="send({cmd:'ToggleReaderMode'}); closeToolsPopover();">
                 <div class="bento-top">
                     <span>Reader Mode</span>
-                    <span>📖</span>
+                    <svg class="nv-ic" style="width:16px;height:16px;color:#f59e0b;"><use href="#nv-book"></use></svg>
                 </div>
                 <span class="bento-sub">โหมดอ่านสบายตา</span>
             </button>
             <button class="bento-card" onclick="send({cmd:'SavePageOffline'}); closeToolsPopover(); showToast('💾 บันทึกหน้าเว็บเป็น HTML แล้ว');">
                 <div class="bento-top">
                     <span>Save HTML</span>
-                    <span>💾</span>
+                    <svg class="nv-ic" style="width:16px;height:16px;color:#34d399;"><use href="#nv-offline"></use></svg>
                 </div>
                 <span class="bento-sub">เก็บไว้อ่านออฟไลน์</span>
             </button>
             <button class="bento-card" onclick="send({cmd:'ScrapePageData'}); closeToolsPopover();">
                 <div class="bento-top">
                     <span>Scrape Data</span>
-                    <span>📊</span>
+                    <svg class="nv-ic" style="width:16px;height:16px;color:#38bdf8;"><use href="#nv-chart"></use></svg>
                 </div>
                 <span class="bento-sub">ดูดตารางและข้อมูลเว็บ</span>
             </button>
             <button class="bento-card" onclick="send({cmd:'ToggleShadowMode', enable:true}); closeToolsPopover();">
                 <div class="bento-top">
                     <span>Shadow Mode</span>
-                    <span>👻</span>
+                    <svg class="nv-ic" style="width:16px;height:16px;color:#c084fc;"><use href="#nv-ghost"></use></svg>
                 </div>
                 <span class="bento-sub">ซ่อนหน้าต่างฉุกเฉิน</span>
             </button>
             <button class="bento-card" onclick="checkForUpdates(true); closeToolsPopover();">
                 <div class="bento-top">
                     <span>Check Update</span>
-                    <span style="color:#38bdf8;">🚀</span>
+                    <svg class="nv-ic" style="width:16px;height:16px;color:#f43f5e;"><use href="#nv-rocket"></use></svg>
                 </div>
                 <span class="bento-sub">ตรวจหาเวอร์ชันใหม่</span>
             </button>
@@ -1547,17 +1788,54 @@
 
     <!-- Context Menu for Tab -->
     <div class="context-menu" id="tabContextMenu">
-        <div class="ctx-item" id="ctxPin">📌 ปักหมุดแท็บนี้ (Pin Tab)</div>
-        <div class="ctx-item" id="ctxMute">🔇 ปิดเสียงแท็บนี้ (Mute Tab)</div>
-        <div class="ctx-item" id="ctxHibernate">❄️ แช่แข็งแท็บนี้ (ประหยัด RAM)</div>
-        <div class="ctx-item" id="ctxReload">↻ รีโหลดแท็บนี้</div>
-        <div class="ctx-item" id="ctxCopyUrl">📋 คัดลอก URL</div>
+        <div class="ctx-item" id="ctxPin"><svg class="nv-ic"><use href="#nv-pin"></use></svg> <span>ปักหมุดแท็บนี้ (Pin Tab)</span></div>
+        <div class="ctx-item" id="ctxMute"><svg class="nv-ic"><use href="#nv-mute"></use></svg> <span>ปิดเสียงแท็บนี้ (Mute Tab)</span></div>
+        <div class="ctx-item" id="ctxHibernate"><svg class="nv-ic"><use href="#nv-snow"></use></svg> <span>แช่แข็งแท็บนี้ (ประหยัด RAM)</span></div>
+        <div class="ctx-item" id="ctxReload"><svg class="nv-ic"><use href="#nv-reload"></use></svg> <span>รีโหลดแท็บนี้</span></div>
+        <div class="ctx-item" id="ctxCopyUrl"><svg class="nv-ic"><use href="#nv-copy"></use></svg> <span>คัดลอก URL</span></div>
         <div class="ctx-divider"></div>
-        <div class="ctx-item" id="ctxClose" style="color:#fb7185;">✕ ปิดแท็บนี้</div>
-        <div class="ctx-item" id="ctxCloseOthers" style="color:#fda4af;">✕ ปิดแท็บอื่นๆ ทั้งหมด</div>
+        <div class="ctx-item" id="ctxClose" style="color:#fb7185;"><svg class="nv-ic" style="color:#fb7185;"><use href="#nv-close"></use></svg> <span>ปิดแท็บนี้ (Ctrl+W)</span></div>
+        <div class="ctx-item" id="ctxCloseOthers" style="color:#fda4af;"><svg class="nv-ic" style="color:#fda4af;"><use href="#nv-trash"></use></svg> <span>ปิดแท็บอื่นๆ ทั้งหมด</span></div>
     </div>
 
     <!-- Non-intrusive Glass Toast -->
+    
+    <!-- ============================================================
+         GLOWING IN-APP AUTO-UPDATER MODAL
+         ============================================================ -->
+    <div id="updateModal" class="cmd-backdrop" style="display:none" onclick="if(event.target===this) closeUpdateModal(true)">
+        <div class="cmd-card" style="width:520px;padding:24px;" role="dialog" aria-modal="true" aria-labelledby="updateTitle">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+                <div style="width:42px;height:42px;border-radius:12px;background:rgba(52,211,153,0.16);display:grid;place-items:center;color:#34d399;">
+                    <svg class="nv-ic" style="width:22px;height:22px;"><use href="#nv-rocket"></use></svg>
+                </div>
+                <div>
+                    <h2 id="updateTitle" style="margin:0;font-size:18px;font-weight:700;">อัปเดต Nova Studio</h2>
+                    <span id="updateTagBadge" style="color:var(--text-secondary);font-size:12px">ตรวจสอบเวอร์ชันล่าสุด</span>
+                </div>
+            </div>
+
+            <pre id="updateNotesBox" style="display:none;max-height:160px;margin-top:14px;padding:12px;overflow:auto;white-space:pre-wrap;user-select:text;color:var(--text-secondary);background:var(--bg-omnibox);border:1px solid var(--border);border-radius:10px;font-size:12px;"></pre>
+
+            <div id="updateProgressContainer" style="display:none;margin-top:16px;">
+                <div style="height:7px;background:var(--bg-omnibox);border-radius:99px;overflow:hidden">
+                    <div id="updateProgressBar" style="width:0;height:6px;background:var(--accent);transition:width 0.2s;"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-top:6px;">
+                    <p id="updateStepText" style="margin:0;font-size:12px;color:var(--text-secondary);"></p>
+                    <small id="updatePctText" style="font-weight:700;color:var(--accent);"></small>
+                </div>
+                <small id="updateLogText" style="display:block;color:var(--text-muted);font-size:11px;margin-top:4px;"></small>
+            </div>
+
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
+                <button id="btnLaterUpdate" class="nav-btn" onclick="closeUpdateModal(true)">ภายหลัง</button>
+                <button id="btnStartUpdate" class="nav-btn" style="background:var(--accent);color:#fff;" onclick="startUpdateProcess()">ดาวน์โหลดและอัปเดต</button>
+                <button id="btnRelaunch" class="nav-btn" style="display:none;background:#10b981;color:#fff;" onclick="relaunchApp()">รีสตาร์ทเพื่อใช้เวอร์ชันใหม่</button>
+            </div>
+        </div>
+    </div>
+
     <div id="novaToast" class="nova-toast"></div>
 
     <script>
@@ -1841,7 +2119,7 @@
 
         function showTabContextMenu(x, y, tab) {
             activeCtxTab = tab;
-            document.getElementById('ctxPin').textContent = tab.pinned ? '📌 ถอนหมุดแท็บนี้ (Unpin)' : '📌 ปักหมุดแท็บนี้ (Pin Tab)';
+            document.getElementById('ctxPin').innerHTML = tab.pinned ? '<svg class="nv-ic"><use href="#nv-pin"></use></svg> <span>ถอนหมุดแท็บนี้ (Unpin)</span>' : '<svg class="nv-ic"><use href="#nv-pin"></use></svg> <span>ปักหมุดแท็บนี้ (Pin Tab)</span>';
             document.getElementById('ctxMute').textContent = tab.muted ? '🔊 เปิดเสียงแท็บนี้ (Unmute)' : '🔇 ปิดเสียงแท็บนี้ (Mute)';
             document.getElementById('ctxHibernate').style.display = (tab.active || tab.hibernated) ? 'none' : 'flex';
             
@@ -2062,7 +2340,7 @@
             // ป้ายความปลอดภัยของการเชื่อมต่อ (https/http/about)
             const sec = document.getElementById('secBadge');
             const u = state.activeUrl || '';
-            sec.textContent = u.startsWith('https://') ? '🔒' : (u.startsWith('http://') ? '⚠' : 'ℹ');
+            sec.innerHTML = u.startsWith('https://') ? '<svg class="nv-ic" style="width:13px;height:13px;"><use href="#nv-lock"></use></svg>' : (u.startsWith('http://') ? '<svg class="nv-ic" style="width:13px;height:13px;color:#fbbf24;"><use href="#nv-shield"></use></svg>' : '<svg class="nv-ic" style="width:13px;height:13px;"><use href="#nv-globe"></use></svg>');
             sec.title = u.startsWith('https://') ? 'การเชื่อมต่อนี้เข้ารหัส (HTTPS)' : (u.startsWith('http://') ? 'ไม่เข้ารหัส (HTTP)' : 'หน้าในเครื่อง');
 
             // ป้ายซูม — แสดงเมื่อไม่ใช่ 100% (คลิกเพื่อรีเซ็ต)
@@ -2104,32 +2382,32 @@
         let visibleCommands = [];
 
         const SYSTEM_ACTIONS = [
-            { icon: '🌐', title: 'ตั้งเป็นเบราว์เซอร์เริ่มต้น (Set as Default Browser)', shortcut: '', action: () => send({ cmd: 'SetAsDefaultBrowser' }) },
-            { icon: '📑', title: 'สลับโหมดแท็บแนวตั้ง / แนวนอน (Toggle Vertical Tabs)', shortcut: '', action: () => send({ cmd: 'ToggleVerticalTabs' }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-globe"></use></svg>', title: 'ตั้งเป็นเบราว์เซอร์เริ่มต้น (Set as Default Browser)', shortcut: '', action: () => send({ cmd: 'SetAsDefaultBrowser' }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-layout"></use></svg>', title: 'สลับโหมดแท็บแนวตั้ง / แนวนอน (Toggle Vertical Tabs)', shortcut: '', action: () => send({ cmd: 'ToggleVerticalTabs' }) },
             { icon: '❄️', title: 'Memory Saver Pro: แช่แข็งแท็บเบื้องหลังเพื่อคืนแรม', shortcut: '', action: () => send({ cmd: 'SnoozeInactiveTabs' }) },
-            { icon: '🚀', title: 'ตรวจหาอัปเดตเวอร์ชันใหม่ (Check for Updates)', shortcut: '', action: () => checkForUpdates(true) },
-            { icon: '✨', title: 'เปิดแท็บใหม่ (New Tab)', shortcut: 'Ctrl+T', action: () => send({ cmd: 'NewTab', url: null, incognito: false, workspace: null, pinned: false }) },
-            { icon: '🕵️', title: 'เปิดแท็บไร้ตัวตน (New Incognito Tab)', shortcut: 'Ctrl+Shift+N', action: () => send({ cmd: 'NewTab', url: null, incognito: true, workspace: null, pinned: false }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-rocket"></use></svg>', title: 'ตรวจหาอัปเดตเวอร์ชันใหม่ (Check for Updates)', shortcut: '', action: () => checkForUpdates(true) },
+            { icon: '<svg class="nv-ic"><use href="#nv-plus"></use></svg>', title: 'เปิดแท็บใหม่ (New Tab)', shortcut: 'Ctrl+T', action: () => send({ cmd: 'NewTab', url: null, incognito: false, workspace: null, pinned: false }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-incognito"></use></svg>', title: 'เปิดแท็บไร้ตัวตน (New Incognito Tab)', shortcut: 'Ctrl+Shift+N', action: () => send({ cmd: 'NewTab', url: null, incognito: true, workspace: null, pinned: false }) },
             { icon: '⏪', title: 'กู้คืนแท็บที่เพิ่งปิด (Restore Closed Tab)', shortcut: 'Ctrl+Shift+T', action: () => send({ cmd: 'ReopenClosedTab' }) },
-            { icon: '🔊', title: 'บูสต์เสียงลำโพง 250% (Audio Boost)', shortcut: '', action: () => send({ cmd: 'BoostAudio', gain: 2.5 }) },
-            { icon: '✨', title: 'เปิดโหมด GPU RGX เพิ่มความคมชัด', shortcut: '', action: () => send({ cmd: 'ToggleRgxGpuShader' }) },
-            { icon: '🌐', title: 'แปลหน้าเว็บเป็นภาษาไทย (Translate to Thai)', shortcut: '', action: () => send({ cmd: 'TranslatePageToThai' }) },
-            { icon: '🎨', title: 'สลับธีมสีของสตูดิโอ (Cycle Studio Theme)', shortcut: '', action: () => CycleThemePreview() },
-            { icon: '🔎', title: 'ค้นหาคำในหน้าเว็บ (Find in Page)', shortcut: 'Ctrl+F', action: () => { const q = prompt('พิมพ์คำที่ต้องการค้นหา:'); if(q) send({ cmd: 'FindInPage', query: q }); } },
-            { icon: '🖨️', title: 'พิมพ์หน้าเว็บ หรือ บันทึกเป็น PDF', shortcut: 'Ctrl+P', action: () => send({ cmd: 'PrintPage' }) },
-            { icon: '📖', title: 'โหมดอ่านบทความสบายตา (Reader Mode)', shortcut: '', action: () => send({ cmd: 'ToggleReaderMode' }) },
-            { icon: '🗣️', title: 'เปิดอ่านออกเสียงหน้าเว็บ (Text-to-Speech)', shortcut: '', action: () => send({ cmd: 'ToggleVoiceRead' }) },
-            { icon: '📊', title: 'ดูดตารางและข้อมูลเว็บ (Scrape Page Data)', shortcut: '', action: () => send({ cmd: 'ScrapePageData' }) },
-            { icon: '💾', title: 'บันทึกเว็บไว้อ่านออฟไลน์ HTML', shortcut: '', action: () => send({ cmd: 'SavePageOffline' }) },
-            { icon: '🧹', title: 'ล้างคุกกี้และข้อมูลของเว็บปัจจุบัน', shortcut: '', action: () => send({ cmd: 'ClearSiteData' }) },
-            { icon: '🔥', title: 'ล้างประวัติการเข้าชมทั้งหมด (Clear History)', shortcut: '', action: () => { if(confirm('ต้องการล้างประวัติทั้งหมด?')) send({ cmd: 'ClearHistory' }); } },
+            { icon: '<svg class="nv-ic"><use href="#nv-audio"></use></svg>', title: 'บูสต์เสียงลำโพง 250% (Audio Boost)', shortcut: '', action: () => send({ cmd: 'BoostAudio', gain: 2.5 }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-plus"></use></svg>', title: 'เปิดโหมด GPU RGX เพิ่มความคมชัด', shortcut: '', action: () => send({ cmd: 'ToggleRgxGpuShader' }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-globe"></use></svg>', title: 'แปลหน้าเว็บเป็นภาษาไทย (Translate to Thai)', shortcut: '', action: () => send({ cmd: 'TranslatePageToThai' }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-paint"></use></svg>', title: 'สลับธีมสีของสตูดิโอ (Cycle Studio Theme)', shortcut: '', action: () => CycleThemePreview() },
+            { icon: '<svg class="nv-ic"><use href="#nv-search"></use></svg>', title: 'ค้นหาคำในหน้าเว็บ (Find in Page)', shortcut: 'Ctrl+F', action: () => { const q = prompt('พิมพ์คำที่ต้องการค้นหา:'); if(q) send({ cmd: 'FindInPage', query: q }); } },
+            { icon: '<svg class="nv-ic"><use href="#nv-offline"></use></svg>', title: 'พิมพ์หน้าเว็บ หรือ บันทึกเป็น PDF', shortcut: 'Ctrl+P', action: () => send({ cmd: 'PrintPage' }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-book"></use></svg>', title: 'โหมดอ่านบทความสบายตา (Reader Mode)', shortcut: '', action: () => send({ cmd: 'ToggleReaderMode' }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-audio"></use></svg>', title: 'เปิดอ่านออกเสียงหน้าเว็บ (Text-to-Speech)', shortcut: '', action: () => send({ cmd: 'ToggleVoiceRead' }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-chart"></use></svg>', title: 'ดูดตารางและข้อมูลเว็บ (Scrape Page Data)', shortcut: '', action: () => send({ cmd: 'ScrapePageData' }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-offline"></use></svg>', title: 'บันทึกเว็บไว้อ่านออฟไลน์ HTML', shortcut: '', action: () => send({ cmd: 'SavePageOffline' }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-trash"></use></svg>', title: 'ล้างคุกกี้และข้อมูลของเว็บปัจจุบัน', shortcut: '', action: () => send({ cmd: 'ClearSiteData' }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-trash"></use></svg>', title: 'ล้างประวัติการเข้าชมทั้งหมด (Clear History)', shortcut: '', action: () => { if(confirm('ต้องการล้างประวัติทั้งหมด?')) send({ cmd: 'ClearHistory' }); } },
             { icon: '◫', title: 'สลับโหมดแบ่งหน้าจอ (1 จอ / 2 จอคู่ / 3 จอ)', shortcut: '', action: () => send({ cmd: 'CycleTilingMode' }) },
-            { icon: '👻', title: 'ซ่อนเบราว์เซอร์เข้ามิติมืด (Shadow Mode)', shortcut: '', action: () => send({ cmd: 'ToggleShadowMode', enable: true }) },
-            { icon: '🏠', title: 'สลับไปพื้นที่ทำงาน: ทั่วไป', shortcut: '', action: () => send({ cmd: 'SwitchWorkspace', workspace: 'main' }) },
-            { icon: '💼', title: 'สลับไปพื้นที่ทำงาน: ทำงาน', shortcut: '', action: () => send({ cmd: 'SwitchWorkspace', workspace: 'work' }) },
-            { icon: '🤖', title: 'สลับไปพื้นที่ทำงาน: AI Lab', shortcut: '', action: () => send({ cmd: 'SwitchWorkspace', workspace: 'ai' }) },
-            { icon: '🕒', title: 'เปิด/ปิด แถบข้าง AI และประวัติ', shortcut: '', action: () => send({ cmd: 'ToggleSidePanel' }) },
-            { icon: '🧘', title: 'เปิด/ปิด โหมดไร้ขอบ (Zen Mode)', shortcut: '', action: () => send({ cmd: 'ToggleZenMode' }) }
+            { icon: '<svg class="nv-ic"><use href="#nv-ghost"></use></svg>', title: 'ซ่อนเบราว์เซอร์เข้ามิติมืด (Shadow Mode)', shortcut: '', action: () => send({ cmd: 'ToggleShadowMode', enable: true }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-home"></use></svg>', title: 'สลับไปพื้นที่ทำงาน: ทั่วไป', shortcut: '', action: () => send({ cmd: 'SwitchWorkspace', workspace: 'main' }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-work"></use></svg>', title: 'สลับไปพื้นที่ทำงาน: ทำงาน', shortcut: '', action: () => send({ cmd: 'SwitchWorkspace', workspace: 'work' }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-spark"></use></svg>', title: 'สลับไปพื้นที่ทำงาน: AI Lab', shortcut: '', action: () => send({ cmd: 'SwitchWorkspace', workspace: 'ai' }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-restore"></use></svg>', title: 'เปิด/ปิด แถบข้าง AI และประวัติ', shortcut: '', action: () => send({ cmd: 'ToggleSidePanel' }) },
+            { icon: '<svg class="nv-ic"><use href="#nv-layout"></use></svg>', title: 'เปิด/ปิด โหมดไร้ขอบ (Zen Mode)', shortcut: '', action: () => send({ cmd: 'ToggleZenMode' }) }
         ];
 
         function openCommandPalette() {

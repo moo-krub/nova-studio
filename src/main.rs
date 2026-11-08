@@ -491,8 +491,9 @@ fn main() -> wry::Result<()> {
     let window_icon = Icon::from_rgba(icon_bytes.to_vec(), 32, 32).ok();
 
     let mut win_builder = WindowBuilder::new()
-        .with_title("Nova Studio v6.0 — Master UX, Smart Omnibox, Audio Equalizer & Raycast Palette 🦀✨")
+        .with_title("Nova Studio — Spatial Browser 2027 🦀✨")
         .with_window_icon(window_icon)
+        .with_maximized(true)
         .with_inner_size(LogicalSize::new(1460.0, 900.0));
 
     if start_in_shadow {

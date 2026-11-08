@@ -91,19 +91,20 @@
       color-scheme: dark;
     }
 
-    body {
+    html, body {
       margin: 0;
-      min-width: 320px;
-      min-height: 100vh;
-      padding: 24px;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    body {
       color: var(--text);
-      background: var(--bg);
+      background: var(--surface);
       transition: background .35s var(--ease-spring), color .35s var(--ease-spring);
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      overflow-x: hidden;
     }
 
     button, input, textarea, select { font: inherit; }
@@ -120,30 +121,31 @@
     }
 
     .browser {
-      width: 100%;
-      max-width: 1360px;
-      min-height: calc(100vh - 48px);
-      margin: auto;
+      width: 100vw;
+      height: 100vh;
+      max-width: 100%;
+      margin: 0;
       display: flex;
       flex-direction: column;
       overflow: hidden;
       background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      transition: background .35s var(--ease-spring), border-radius .35s var(--ease-spring), box-shadow .35s var(--ease-spring);
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
     }
 
     /* Top Bar */
     .tabbar {
-      min-height: 62px;
-      padding: 10px 18px;
+      min-height: 46px;
+      max-height: 46px;
+      padding: 4px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
       background: var(--chrome);
       border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
     }
 
     .brand {
@@ -270,21 +272,26 @@
       box-shadow: 4px 4px 0 var(--text);
     }
 
-    /* Workspace */
+    /* Workspace — Full Edge-to-Edge Desktop */
     .workspace {
       flex: 1;
       min-height: 0;
+      height: calc(100vh - 46px);
       display: grid;
       grid-template-columns: 66px minmax(0, 1fr);
+      overflow: hidden;
     }
 
     .rail {
-      padding: 20px 10px;
+      padding: 14px 8px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       border-right: 1px solid var(--line);
       background: color-mix(in srgb, var(--chrome) 40%, var(--surface));
+      height: 100%;
+      overflow: hidden;
+      box-sizing: border-box;
     }
 
     .rail-group {
@@ -328,27 +335,37 @@
       box-shadow: 2px 2px 0 var(--text);
     }
 
-    /* Page Content */
+    /* Page Content — Zero Cramp, Fits Perfectly Without Scrolling */
     .page {
       overflow-y: auto;
-      padding: clamp(32px, 4.5vw, 56px);
+      overflow-x: hidden;
+      height: 100%;
+      box-sizing: border-box;
+      padding: clamp(14px, 2.2vh, 24px) clamp(24px, 4vw, 64px);
       background:
         radial-gradient(circle at 95% 5%,
           color-mix(in srgb, var(--accent-2) 14%, transparent),
           transparent 28%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: clamp(10px, 1.8vh, 18px);
+      scrollbar-width: thin;
+      scrollbar-color: var(--line) transparent;
     }
 
     .hero {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 25px;
+      gap: 20px;
+      flex-shrink: 0;
     }
 
     .eyebrow {
-      margin: 0 0 10px;
+      margin: 0 0 4px;
       color: var(--accent);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 800;
       letter-spacing: .12em;
       text-transform: uppercase;
@@ -357,24 +374,24 @@
     .hero h1 {
       max-width: 850px;
       margin: 0;
-      font-size: clamp(32px, 4.2vw, 58px);
+      font-size: clamp(20px, 2.3vw, 32px);
       line-height: 1.15;
-      letter-spacing: -.035em;
+      letter-spacing: -.03em;
       font-weight: 850;
     }
 
     .hero h1 span { color: var(--accent); }
 
     .hero-description {
-      margin: 14px 0 0;
+      margin: 4px 0 0;
       color: var(--muted);
-      font-size: 15px;
-      line-height: 1.6;
+      font-size: 13px;
+      line-height: 1.4;
     }
 
     .stamp {
-      width: 120px;
-      height: 120px;
+      width: 80px;
+      height: 80px;
       flex: 0 0 auto;
       display: grid;
       place-content: center;
@@ -399,7 +416,7 @@
     .stamp strong {
       color: var(--accent);
       font-family: Georgia, serif;
-      font-size: 26px;
+      font-size: 18px;
       font-style: italic;
     }
 
@@ -412,20 +429,22 @@
       transform: rotate(-5deg);
     }
 
-    /* Big Search */
+    /* Big Search — Sleek & Compact */
     .big-search {
-      max-width: 900px;
-      min-height: 62px;
-      margin: 32px 0 36px;
-      padding: 7px 7px 7px 20px;
+      max-width: 960px;
+      width: 100%;
+      min-height: 48px;
+      margin: 0;
+      padding: 4px 6px 4px 16px;
       display: flex;
       align-items: center;
       gap: 12px;
       background: var(--field);
       border: 1px solid var(--line);
-      border-radius: calc(var(--radius) * .8);
+      border-radius: 16px;
       box-shadow: var(--soft-shadow);
       transition: all .2s ease;
+      flex-shrink: 0;
     }
     .big-search:focus-within {
       border-color: var(--accent);
@@ -445,14 +464,14 @@
       background: transparent;
       border: 0;
       outline: 0;
-      font-size: 16px;
+      font-size: 14.5px;
       font-weight: 500;
     }
 
     .big-search input::placeholder { color: var(--muted); }
 
     .big-search button {
-      min-height: 48px;
+      min-height: 38px;
       padding: 0 24px;
       color: var(--surface);
       background: var(--accent);
@@ -509,13 +528,13 @@
 
     .shortcut {
       position: relative;
-      min-height: 120px;
-      padding: 16px;
+      min-height: 74px;
+      padding: 10px 14px;
       color: var(--text);
       text-decoration: none;
       background: var(--surface);
       border: 1px solid var(--line);
-      border-radius: calc(var(--radius) * .7);
+      border-radius: 14px;
       transition: transform .2s var(--ease-spring), box-shadow .2s ease, border-color .2s ease;
       cursor: pointer;
       display: flex;
@@ -547,16 +566,16 @@
     }
 
     .tile-icon {
-      width: 38px;
-      height: 38px;
+      width: 28px;
+      height: 28px;
       display: grid;
       place-items: center;
       color: var(--accent);
       background: var(--field);
       border: 1px solid var(--line);
-      border-radius: 12px 16px 11px 15px;
+      border-radius: 8px 12px 7px 11px;
       font-weight: 850;
-      font-size: 18px;
+      font-size: 14px;
     }
 
     .shortcut .arrow {
@@ -571,8 +590,8 @@
 
     .shortcut strong {
       display: block;
-      font-size: 15px;
-      margin-top: 10px;
+      font-size: 13px;
+      margin-top: 4px;
       font-weight: 750;
     }
 
@@ -588,17 +607,18 @@
 
     /* Bottom Grid */
     .bottom-grid {
-      margin-top: 28px;
+      margin-top: 0;
       display: grid;
       grid-template-columns: 1.35fr .85fr;
-      gap: 16px;
+      gap: 14px;
+      flex-shrink: 0;
     }
 
     .panel {
-      padding: 22px;
+      padding: 12px 16px;
       background: var(--field);
       border: 1px solid var(--line);
-      border-radius: calc(var(--radius) * .7);
+      border-radius: 14px;
     }
 
     html[data-theme="zine"] .panel {
@@ -623,7 +643,7 @@
 
     .recent-item {
       width: 100%;
-      padding: 11px 0;
+      padding: 6px 0;
       display: flex;
       align-items: center;
       gap: 12px;
@@ -677,7 +697,7 @@
     .note-panel textarea {
       width: 100%;
       flex: 1;
-      min-height: 130px;
+      min-height: 55px; height: 60px;
       padding: 0;
       resize: vertical;
       color: var(--text);
@@ -703,7 +723,7 @@
     }
 
     footer {
-      margin-top: 32px;
+      margin-top: 8px;
       color: var(--muted);
       font-size: 11.5px;
       text-align: center;

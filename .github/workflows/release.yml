@@ -45,15 +45,22 @@ jobs:
           
           New-Item -ItemType Directory -Path "dist" -Force
           $sourceExe = "target\release\my_rust_browser.exe"
-          $targetExe = "dist\Nova-Studio-$ver-x64.exe"
-          Copy-Item $sourceExe $targetExe -Force
+          $portableExe = "dist\Nova-Studio-$ver-Portable.exe"
+          Copy-Item $sourceExe $portableExe -Force
           
-          # Calculate SHA-256 Checksum
-          $hash = (Get-FileHash -Path $targetExe -Algorithm SHA256).Hash.ToLower()
-          "$hash  Nova-Studio-$ver-x64.exe" | Out-File -FilePath "dist\checksums-sha256.txt" -Encoding ascii
+          # Compile 1-Click Setup Installer
+          $setupExe = "dist\Nova-Studio-$ver-Setup.exe"
+          rustc -O -C panic=abort -C lto=fat -C codegen-units=1 src/installer.rs -o $setupExe
           
-          Write-Host "✅ Artifact built successfully: $targetExe"
-          Write-Host "✅ SHA256: $hash"
+          # Calculate SHA-256 Checksums
+          $lines = @()
+          foreach ($file in @($portableExe, $setupExe)) {
+            $h = (Get-FileHash -Path $file -Algorithm SHA256).Hash.ToLower()
+            $fname = Split-Path $file -Leaf
+            $lines += "$h  $fname"
+            Write-Host "✅ $fname SHA256: $h"
+          }
+          $lines | Out-File -FilePath "dist\checksums-sha256.txt" -Encoding ascii
 
       - name: Create GitHub Release & Upload Assets
         uses: softprops/action-gh-release@v2

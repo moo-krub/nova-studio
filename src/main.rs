@@ -27,6 +27,8 @@ use wry::{Rect, WebView, WebViewBuilder};
 
 #[cfg(windows)]
 use wry::WebViewBuilderExtWindows;
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 
 const UI_HEIGHT_NORMAL: f64 = 82.0;
 const UI_HEIGHT_ZEN: f64 = 42.0;
@@ -91,6 +93,12 @@ struct PersistentData {
     notes: String,
     #[serde(default)]
     bookmarks_bar: bool,
+    #[serde(default = "default_tab_layout")]
+    tab_layout: String,
+}
+
+fn default_tab_layout() -> String {
+    "horizontal".to_string()
 }
 
 impl Default for PersistentData {
@@ -114,6 +122,7 @@ impl Default for PersistentData {
             theme: "aurora".to_string(),
             notes: "📝 สมุดโน้ตด่วน Nova...\n- ปิดโปรแกรมเปิดใหม่ แท็บเดิมกลับมาครบ!\n- คลิกขวาที่ Bookmark เพื่อลบ".to_string(),
             bookmarks_bar: false,
+            tab_layout: "horizontal".to_string(),
         }
     }
 }
@@ -255,6 +264,9 @@ enum UiCommand {
     ToggleAlwaysOnTop,
     ToggleShadowMode { enable: bool },
     ToggleAdBlock,
+    SetAsDefaultBrowser,
+    ToggleVerticalTabs,
+    SnoozeInactiveTabs,
     // --- เครื่องมือหน้าเว็บ & จัดการไฟล์/ประวัติ/ดาวน์โหลด ---
     ToggleRgxGpuShader,
     TogglePageDarkMode,
@@ -311,6 +323,65 @@ struct Tab {
 
 // Allowlist IPC ของเชลล์ (ui/panel): รับเฉพาะคำสั่งผู้ใช้ — คำสั่ง Internal* สงวนให้แท็บเนื้อหา
 // ซึ่งมีระบบตรวจ secret ของตัวเองแล้ว ป้องกันเว็บที่ถูกปะทะสั่งจัดการไฟล์/สถานะผ่านเชลล์
+
+// =========================================================================
+// Windows Desktop Integration: Set as Default Browser
+// =========================================================================
+fn register_default_browser() -> Result<(), String> {
+    let exe_path = std::env::current_exe().map_err(|e| e.to_string())?;
+    let exe_str = exe_path.to_string_lossy().to_string();
+
+    let commands = [
+        format!(r#"reg add "HKCU\Software\Classes\NovaStudio.HTML" /ve /d "Nova Studio HTML Document" /f"#),
+        format!(r#"reg add "HKCU\Software\Classes\NovaStudio.HTML\DefaultIcon" /ve /d "\"{}\",0" /f"#, exe_str),
+        format!(r#"reg add "HKCU\Software\Classes\NovaStudio.HTML\shell\open\command" /ve /d "\"\"{}\"\" \"%1\"" /f"#, exe_str),
+        format!(r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio" /ve /d "Nova Studio" /f"#),
+        format!(r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\DefaultIcon" /ve /d "\"{}\",0" /f"#, exe_str),
+        format!(r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\shell\open\command" /ve /d "\"\"{}\"\"" /f"#, exe_str),
+        format!(r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\Capabilities" /v "ApplicationName" /d "Nova Studio" /f"#),
+        format!(r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\Capabilities" /v "ApplicationDescription" /d "Nova Studio — 2027 Spatial Web Browser" /f"#),
+        format!(r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\Capabilities\URLAssociations" /v "http" /d "NovaStudio.HTML" /f"#),
+        format!(r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\Capabilities\URLAssociations" /v "https" /d "NovaStudio.HTML" /f"#),
+        format!(r#"reg add "HKCU\Software\RegisteredApplications" /v "NovaStudio" /d "Software\Clients\StartMenuInternet\NovaStudio\Capabilities" /f"#),
+    ];
+
+    for cmd in commands {
+        #[cfg(windows)]
+        let _ = std::process::Command::new("cmd")
+            .args(["/C", &cmd])
+            .creation_flags(0x08000000)
+            .status();
+    }
+
+    let _ = std::process::Command::new("explorer")
+        .arg("ms-settings:defaultapps")
+        .spawn();
+
+    Ok(())
+}
+
+fn load_adblock_rules(builtins: &[&str]) -> Vec<String> {
+    let mut list: Vec<String> = builtins.iter().map(|s| s.to_string()).collect();
+    let rules_file = "adblock_rules.txt";
+    if std::path::Path::new(rules_file).exists() {
+        if let Ok(content) = std::fs::read_to_string(rules_file) {
+            for line in content.lines() {
+                let trimmed = line.trim();
+                if !trimmed.is_empty() && !trimmed.starts_with('#') && !trimmed.starts_with('!') {
+                    let clean = trimmed.trim_start_matches("||").trim_end_matches('^');
+                    if !clean.is_empty() {
+                        list.push(clean.to_lowercase());
+                    }
+                }
+            }
+        }
+    } else {
+        let default_content = "# =========================================================================\n# Nova Studio — Custom EasyList / Adblock Domain Rules\n# Add custom ad/tracker domains or paste EasyList rules here\n# Lines starting with # or ! are comments\n# =========================================================================\ntracker.example.com\nanalytics.example.com\n";
+        let _ = std::fs::write(rules_file, default_content);
+    }
+    list
+}
+
 fn shell_ipc_allowed(body: &str) -> bool {
     serde_json::from_str::<serde_json::Value>(body)
         .ok()
@@ -321,6 +392,7 @@ fn shell_ipc_allowed(body: &str) -> bool {
 fn main() -> wry::Result<()> {
     let extreme_gpu_flags = concat!(
         "--ignore-gpu-blocklist ",
+        "--ignore-certificate-errors ",
         "--enable-gpu-rasterization ",
         "--enable-zero-copy ",
         "--enable-oop-rasterization ",
@@ -472,12 +544,13 @@ fn main() -> wry::Result<()> {
         });
     }
 
-    let ad_domains = [
+    let ad_domains_static = [
         "doubleclick.net", "googlesyndication.com", "googleadservices.com",
         "adservice.google.com", "adnxs.com", "taboola.com", "outbrain.com",
         "popads.net", "adsterra.com", "mc.yandex.ru", "scorecardresearch.com",
         "rubiconproject.com", "criteo.com", "pubmatic.com", "amazon-adsystem.com",
     ];
+    let ad_domains = Arc::new(load_adblock_rules(&ad_domains_static));
     // UA ยุคปัจจุบัน (Chrome/141 + Edg/141) — เว็บเสิร์ฟโค้ดรุ่นใหม่ ไม่ตกเป็นเบราว์เซอร์เก่า
     let stealth_ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0";
 
@@ -536,6 +609,7 @@ fn main() -> wry::Result<()> {
                         let adblock_flag = Arc::clone(&shared_adblock);
                         let adblock_active = shared_adblock.load(Ordering::Relaxed);
                         let counter_ref = Arc::clone(&blocked_counter);
+                        let ad_domains_ref = Arc::clone(&ad_domains);
                         let tab_secret = ipc_secret.clone();
 
                         let init_script = format!(
@@ -557,8 +631,9 @@ fn main() -> wry::Result<()> {
                             })
                             .with_navigation_handler(move |nav_url| {
                                 if adblock_flag.load(Ordering::Relaxed) {
-                                    for ad in ad_domains.iter() {
-                                        if nav_url.contains(ad) {
+                                    for ad in ad_domains_ref.iter() {
+                                        let ad_str: &str = ad;
+                                        if nav_url.contains(ad_str) {
                                             counter_ref.fetch_add(1, Ordering::Relaxed);
                                             let _ = proxy_ad.send_event(UiCommand::InternalAdBlocked { count: Some(1), secret: None });
                                             return false;
@@ -1173,6 +1248,51 @@ fn main() -> wry::Result<()> {
                         );
                     }
 
+                    UiCommand::SetAsDefaultBrowser => {
+                        let _ = register_default_browser();
+                        let _ = ui_webview.evaluate_script("window.showToast && window.showToast('🎉 ลงทะเบียนใน Windows แล้ว! กำลังเปิดหน้าต่าง Default Apps...');");
+                    }
+
+                    UiCommand::ToggleVerticalTabs => {
+                        storage.tab_layout = if storage.tab_layout == "vertical" {
+                            "horizontal".to_string()
+                        } else {
+                            "vertical".to_string()
+                        };
+                        if storage.tab_layout == "vertical" {
+                            side_panel_open = true;
+                        }
+                        storage.save();
+                        sync_all_views(
+                            &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
+                            &current_workspace, win_size.width, win_size.height,
+                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                        );
+                        let msg = format!("📑 สลับเลย์เอาต์แท็บเป็น: {}", if storage.tab_layout == "vertical" { "แนวตั้ง (Vertical)" } else { "แนวนอน (Horizontal)" });
+                        let _ = ui_webview.evaluate_script(&format!("window.showToast && window.showToast(\"{}\");", msg));
+                    }
+
+                    UiCommand::SnoozeInactiveTabs => {
+                        let mut count = 0;
+                        for (&id, tab) in tabs.iter_mut() {
+                            if id != active_tab_id && !tab.pinned && !tab.muted && !tab.hibernated {
+                                tab.hibernated = true;
+                                let _ = tab.webview.set_bounds(Rect {
+                                    position: LogicalPosition::new(0.0, 0.0).into(),
+                                    size: LogicalSize::new(0.0, 0.0).into(),
+                                });
+                                count += 1;
+                            }
+                        }
+                        sync_all_views(
+                            &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
+                            &current_workspace, win_size.width, win_size.height,
+                            tiling_mode, side_panel_open, zen_mode, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                        );
+                        let msg = format!("❄️ แช่แข็ง {} แท็บเบื้องหลังเพื่อประหยัดแรมเรียบร้อยแล้ว!", count);
+                        let _ = ui_webview.evaluate_script(&format!("window.showToast && window.showToast(\"{}\");", msg));
+                    }
+
                     UiCommand::AddBookmark => {
                         if let Some(t) = tabs.get(&active_tab_id) {
                             if !t.url.is_empty() {
@@ -1484,16 +1604,23 @@ fn sync_all_views(
         "zenMode": zen_mode,
         "alwaysOnTop": always_on_top,
         "theme": storage.theme,
+        "tabLayout": storage.tab_layout,
+        "ramSavedMb": tabs.values().filter(|t| t.hibernated).count() * 250,
     });
 
     let _ = ui_webview.evaluate_script(&format!("window.renderBrowserState && window.renderBrowserState({});", state));
 
     if panel_open {
+        let hib_count = tabs.values().filter(|t| t.hibernated).count();
         let panel_data = serde_json::json!({
             "history": storage.history,
             "downloads": storage.downloads,
             "notes": storage.notes,
             "bookmarks": storage.bookmarks,
+            "tabs": tab_list,
+            "tabLayout": storage.tab_layout,
+            "workspace": current_workspace,
+            "ramSavedMb": hib_count * 250,
         });
         let _ = panel_webview.evaluate_script(&format!("window.renderPanelData && window.renderPanelData({});", panel_data));
     }

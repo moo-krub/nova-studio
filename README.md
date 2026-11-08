@@ -57,8 +57,26 @@ Unlike monolithic browsers that consume gigabytes of RAM and package redundant C
 ### 🤖 6. Embedded AI & MCP Agent Server
 - **JSON-RPC 2.0 Local Agent Endpoint (`:9222` / `:9225`):** Built-in automation server with token authentication and CSRF protection, enabling external AI assistants and MCP agents to inspect DOM, fill forms, extract pages, and automate workflows.
 
-### ◫ 7. Spatial Multi-View Tiling
+### ◫ 7. Spatial Multi-View Tiling & Drag-and-Drop Split
 - **Split View on Demand:** Seamlessly tile tabs into **Single Window**, **Dual Split Screen**, or **3-Pane Grid View** with a single click.
+- **Drag-and-Drop Split:** Drag any tab directly onto the split screen button (`#gridBtn`) to instantly split views!
+
+### 📑 8. Vertical Tabs & Arc/Zen Style Collapsible Sidebar
+- **Spatial Ergonomics:** Toggle between sleek top tab bar and full vertical sidebar tab management (`Ctrl+K` -> Toggle Vertical Tabs or the `📑 แนวตั้ง` button).
+- **Tab Search & Frost Badges:** Search open tabs in real-time with instant indicators for hibernated, incognito, and muted tabs.
+
+### ❄️ 9. Memory Saver Pro & Smart Hibernation
+- **Smart Background Tab Freezing:** Automatically freeze background inactive tabs to release RAM back to Windows.
+- **Live RAM Savings Counter:** Real-time dashboard showing exactly how much RAM Nova has reclaimed (e.g. `❄️ ประหยัด 500 MB`).
+
+### 🛡️ 10. Canvas & Audio Fingerprint Shield + Dynamic EasyList
+- **Zero-Profile Tracking Prevention:** Imperceptible noise injection to `CanvasRenderingContext2D` and `AudioBuffer` prevents tracking networks (like FingerprintJS) from fingerprinting your machine.
+- **Dynamic Rule Engine (`adblock_rules.txt`):** Auto-loads standard EasyList and uBlock origin domain filter rules on launch with zero compile overhead.
+
+### 📦 11. 1-Click Setup Installer & Default Browser Integration
+- **1-Click Windows Setup (`Nova-Studio-Setup.exe`):** Automatically installs to `%LOCALAPPDATA%\Programs\NovaStudio`, creates Desktop & Start Menu shortcuts, and registers Windows Uninstall.
+- **Windows Default Browser Protocol Handler:** One-click registration for `http://`, `https://`, and HTML ProgIDs in Windows Registry, launching `ms-settings:defaultapps` directly.
+
 
 ---
 

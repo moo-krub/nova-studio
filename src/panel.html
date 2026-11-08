@@ -217,6 +217,59 @@
     .dl-status.completed { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
     .dl-status.failed { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
 
+    
+    .vtab-item {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 8px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.15s var(--ease-spring);
+    }
+    .vtab-item:hover {
+        background: rgba(255, 255, 255, 0.07);
+        border-color: rgba(255, 255, 255, 0.14);
+    }
+    .vtab-item.active {
+        background: var(--accent-subtle);
+        border-color: var(--accent);
+        box-shadow: 0 0 10px var(--accent-glow);
+    }
+    .vtab-item.hibernated {
+        opacity: 0.6;
+        border-style: dashed;
+    }
+    .vtab-title {
+        flex: 1;
+        font-size: 11px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--text-primary);
+    }
+    .vtab-badge {
+        font-size: 9px;
+        padding: 1px 5px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text-secondary);
+        font-weight: 600;
+    }
+    .vtab-close {
+        opacity: 0.55;
+        padding: 2px 4px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .vtab-close:hover {
+        opacity: 1;
+        background: rgba(244, 63, 94, 0.25);
+        color: #f43f5e;
+    }
+
     .gpu-info {
         font-size: 11px;
         color: #34d399;
@@ -230,6 +283,7 @@
 </head>
 <body>
     <div class="panel-tabs">
+        <button id="tab-btn-vtabs" class="panel-tab-btn" onclick="switchSection('vtabs')">📑 แท็บแนวตั้ง (<span id="vtabCount">0</span>)</button>
         <button id="tab-btn-hist" class="panel-tab-btn active" onclick="switchSection('hist')">🕒 ประวัติ</button>
         <button id="tab-btn-dl" class="panel-tab-btn" onclick="switchSection('dl')">📥 ดาวน์โหลด (<span id="dlCount">0</span>)</button>
         <button id="tab-btn-ai" class="panel-tab-btn" onclick="switchSection('ai')">🤖 AI & ข้อมูล</button>
@@ -237,6 +291,22 @@
     </div>
 
     <div class="panel-content">
+        <!-- 0. ศูนย์จัดการแท็บแนวตั้ง (Vertical Tabs) -->
+        <div id="sec-vtabs" class="panel-section">
+            <div class="card">
+                <h3>
+                    <span>📑 แท็บทั้งหมด (<span id="vtabHeaderCount">0</span>)</span>
+                    <button class="btn" onclick="send({cmd:'NewTab', url:null, incognito:false, workspace:null, pinned:false})" style="flex:0;padding:2px 8px;font-size:10px;">➕ ใหม่</button>
+                </h3>
+                <div style="display:flex;gap:4px;margin-bottom:8px;">
+                    <button class="btn" onclick="send({cmd:'SnoozeInactiveTabs'})" style="font-size:10px;flex:1;">❄️ คืนแรม (Snooze)</button>
+                    <button class="btn" onclick="send({cmd:'ToggleVerticalTabs'})" style="font-size:10px;flex:1;">สลับแนวนอน</button>
+                </div>
+                <input id="vtabSearch" placeholder="🔍 ค้นหาแท็บที่เปิดอยู่..." oninput="filterVTabs()" style="margin-bottom:8px;" />
+                <div id="vtabList" style="display:flex;flex-direction:column;gap:5px;max-height:calc(100vh - 190px);overflow-y:auto;"></div>
+            </div>
+        </div>
+
         <!-- 1. ศูนย์จัดการประวัติ (History Manager) -->
         <div id="sec-hist" class="panel-section active">
             <div class="card">
@@ -320,11 +390,72 @@
         function send(payload) { window.ipc.postMessage(JSON.stringify(payload)); }
 
         function switchSection(sec) {
-            ['hist', 'dl', 'ai', 'notes'].forEach(s => {
+            ['vtabs', 'hist', 'dl', 'ai', 'notes'].forEach(s => {
                 const btn = document.getElementById('tab-btn-' + s);
                 const el = document.getElementById('sec-' + s);
                 if (btn) btn.className = 'panel-tab-btn' + (s === sec ? ' active' : '');
                 if (el) el.className = 'panel-section' + (s === sec ? ' active' : '');
+            });
+        }
+
+        
+        let allVTabs = [];
+        function filterVTabs() {
+            const q = (document.getElementById('vtabSearch')?.value || '').toLowerCase().trim();
+            const filtered = q ? allVTabs.filter(t => (t.title||'').toLowerCase().includes(q) || (t.url||'').toLowerCase().includes(q)) : allVTabs;
+            renderVTabsList(filtered);
+        }
+
+        function renderVTabsList(tabs) {
+            const list = document.getElementById('vtabList');
+            if (!list) return;
+            list.innerHTML = '';
+            if (!tabs || tabs.length === 0) {
+                list.innerHTML = '<div style="color:var(--text-muted);font-size:11px;text-align:center;padding:14px;">ไม่มีแท็บ</div>';
+                return;
+            }
+            tabs.forEach(t => {
+                const el = document.createElement('div');
+                el.className = 'vtab-item' + (t.active ? ' active' : '') + (t.hibernated ? ' hibernated' : '');
+                el.onclick = () => send({ cmd: 'SwitchTab', id: t.id });
+
+                const icon = document.createElement('span');
+                icon.textContent = t.hibernated ? '❄️' : (t.incognito ? '🕵️' : (t.pinned ? '📌' : '🌐'));
+                icon.style.fontSize = '12px';
+                el.appendChild(icon);
+
+                const title = document.createElement('span');
+                title.className = 'vtab-title';
+                title.textContent = t.title || 'แท็บว่าง';
+                title.title = (t.title || '') + ' - ' + (t.url || '');
+                el.appendChild(title);
+
+                if (t.muted) {
+                    const muteBadge = document.createElement('span');
+                    muteBadge.className = 'vtab-badge';
+                    muteBadge.textContent = '🔇';
+                    el.appendChild(muteBadge);
+                }
+
+                if (t.hibernated) {
+                    const frostBadge = document.createElement('span');
+                    frostBadge.className = 'vtab-badge';
+                    frostBadge.textContent = 'ประหยัด RAM';
+                    frostBadge.style.color = '#38bdf8';
+                    el.appendChild(frostBadge);
+                }
+
+                const close = document.createElement('span');
+                close.className = 'vtab-close';
+                close.textContent = '✕';
+                close.title = 'ปิดแท็บนี้';
+                close.onclick = (e) => {
+                    e.stopPropagation();
+                    send({ cmd: 'CloseTab', id: t.id });
+                };
+                el.appendChild(close);
+
+                list.appendChild(el);
             });
         }
 
@@ -483,6 +614,18 @@
         }
 
         window.renderPanelData = function(data) {
+            if (data.tabs) {
+                allVTabs = data.tabs;
+                const cnt = document.getElementById('vtabCount');
+                if (cnt) cnt.textContent = allVTabs.length;
+                const hcnt = document.getElementById('vtabHeaderCount');
+                if (hcnt) hcnt.textContent = allVTabs.length;
+                filterVTabs();
+                if (data.tabLayout === 'vertical' && !window.__autoVTabShown) {
+                    window.__autoVTabShown = true;
+                    switchSection('vtabs');
+                }
+            }
             if (data.history) {
                 allHistory = data.history;
                 document.getElementById('histCount').textContent = allHistory.length;

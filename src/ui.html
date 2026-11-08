@@ -216,6 +216,23 @@
         flex-shrink: 0;
     }
 
+    
+    .nav-btn.drag-hover {
+        outline: 2px dashed var(--accent-bright) !important;
+        background: var(--accent-subtle) !important;
+        transform: scale(1.08);
+    }
+    .util-pill.active-saver {
+        color: #38bdf8 !important;
+        border-color: rgba(56, 189, 248, 0.4) !important;
+        background: rgba(56, 189, 248, 0.12) !important;
+    }
+    .util-pill.active {
+        color: #818cf8 !important;
+        border-color: rgba(129, 140, 248, 0.5) !important;
+        background: rgba(129, 140, 248, 0.15) !important;
+    }
+
     /* Dynamic Horizontal Tab Track */
     .tab-bar {
         display: flex;
@@ -1173,6 +1190,14 @@
 
         <!-- Subtle Tier-1 Right Utilities -->
         <div class="top-right-utils">
+            <button id="snoozeBtn" class="util-pill" onclick="send({cmd:'SnoozeInactiveTabs'})" title="Memory Saver Pro: แช่แข็งแท็บเบื้องหลังเพื่อคืนแรมทันที">
+                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 1v14M1 8h14M3 3l10 10M13 3L3 13"/></svg>
+                <span id="ramSavedPill">❄️ คืนแรม</span>
+            </button>
+            <button id="tabLayoutBtn" class="util-pill" onclick="send({cmd:'ToggleVerticalTabs'})" title="สลับโหมดแท็บแนวตั้ง / แนวนอน (Vertical Tabs)">
+                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="4" height="12" rx="1"/><rect x="8" y="2" width="6" height="3" rx="0.8"/><rect x="8" y="6.5" width="6" height="3" rx="0.8"/><rect x="8" y="11" width="6" height="3" rx="0.8"/></svg>
+                <span id="tabLayoutLabel">แนวตั้ง</span>
+            </button>
             <button id="reopenBtn" class="util-pill" onclick="send({cmd:'ReopenClosedTab'})" title="กู้คืนแท็บที่เพิ่งปิด (Ctrl+Shift+T)">
                 <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a5 5 0 1 0 1.5-3.5L3 6"/><path d="M3 2.5V6h3.5"/></svg>
                 <span id="closedBadge" class="util-badge">0</span>
@@ -1259,6 +1284,27 @@
             <span style="cursor:pointer;color:var(--text-secondary);" onclick=" CycleThemePreview()" title="สลับธีมสี">🎨 Theme</span>
         </div>
         <div class="bento-grid">
+            <button class="bento-card" onclick="send({cmd:'SetAsDefaultBrowser'}); closeToolsPopover();">
+                <div class="bento-top">
+                    <span>Default App</span>
+                    <span style="color:#34d399;">🌐</span>
+                </div>
+                <span class="bento-sub">ตั้งเป็นเบราว์เซอร์หลัก</span>
+            </button>
+            <button class="bento-card" onclick="send({cmd:'ToggleVerticalTabs'}); closeToolsPopover();">
+                <div class="bento-top">
+                    <span>Vertical Tabs</span>
+                    <span style="color:#38bdf8;">📑</span>
+                </div>
+                <span class="bento-sub">สลับแท็บแนวตั้ง/แนวนอน</span>
+            </button>
+            <button class="bento-card" onclick="send({cmd:'SnoozeInactiveTabs'}); closeToolsPopover();">
+                <div class="bento-top">
+                    <span>Memory Saver</span>
+                    <span style="color:#60a5fa;">❄️</span>
+                </div>
+                <span id="memSaverSub" class="bento-sub">แช่แข็งแท็บคืนแรม</span>
+            </button>
             <button class="bento-card" onclick="send({cmd:'BoostAudio', gain:2.5}); showToast('🔊 เปิดบูสต์เสียง 250% แล้ว');">
                 <div class="bento-top">
                     <span>Audio 250%</span>
@@ -1701,7 +1747,50 @@
             closedBadgeEl.style.display = (state.closedCount > 0) ? '' : 'none';
             document.getElementById('adBadge').style.opacity = state.adblock ? '1' : '0.45';
 
+            // Memory Saver Pro Indicator
+            const snoozeBtn = document.getElementById('snoozeBtn');
+            const ramPill = document.getElementById('ramSavedPill');
+            const memSub = document.getElementById('memSaverSub');
+            if (snoozeBtn && ramPill) {
+                if (state.ramSavedMb && state.ramSavedMb > 0) {
+                    ramPill.textContent = `❄️ ประหยัด ${state.ramSavedMb} MB`;
+                    snoozeBtn.classList.add('active-saver');
+                    if (memSub) memSub.textContent = `ประหยัดแล้ว ${state.ramSavedMb} MB`;
+                } else {
+                    ramPill.textContent = '❄️ คืนแรม';
+                    snoozeBtn.classList.remove('active-saver');
+                    if (memSub) memSub.textContent = 'แช่แข็งแท็บคืนแรม';
+                }
+            }
+
+            // Tab Layout Label (Vertical / Horizontal)
+            const tabLayoutBtn = document.getElementById('tabLayoutBtn');
+            const tabLayoutLabel = document.getElementById('tabLayoutLabel');
+            if (tabLayoutBtn && tabLayoutLabel) {
+                const isVert = state.tabLayout === 'vertical';
+                tabLayoutLabel.textContent = isVert ? 'แนวนอน' : 'แนวตั้ง';
+                if (isVert) tabLayoutBtn.classList.add('active');
+                else tabLayoutBtn.classList.remove('active');
+            }
+
+
             const gridBtn = document.getElementById('gridBtn');
+            if (gridBtn && !gridBtn.__dndInit) {
+                gridBtn.__dndInit = true;
+                gridBtn.ondragover = (e) => { e.preventDefault(); gridBtn.classList.add('drag-hover'); };
+                gridBtn.ondragleave = () => gridBtn.classList.remove('drag-hover');
+                gridBtn.ondrop = (e) => {
+                    e.preventDefault();
+                    gridBtn.classList.remove('drag-hover');
+                    const dragId = Number(e.dataTransfer.getData('text/plain'));
+                    if (dragId) {
+                        send({ cmd: 'SwitchTab', id: dragId });
+                        send({ cmd: 'CycleTilingMode' });
+                        if (typeof showToast === 'function') showToast('🎯 ลากแท็บเปิด Split View 2 จอสำเร็จ!');
+                    }
+                };
+            }
+
             const gridLabel = document.getElementById('gridBtnLabel');
             gridLabel.textContent = state.tilingMode === 1 ? '1 จอ' : (state.tilingMode === 2 ? '2 จอคู่' : '3 จอ Grid');
             gridBtn.className = 'nav-btn' + (state.tilingMode > 1 ? ' active' : '');
@@ -1751,6 +1840,9 @@
         let visibleCommands = [];
 
         const SYSTEM_ACTIONS = [
+            { icon: '🌐', title: 'ตั้งเป็นเบราว์เซอร์เริ่มต้น (Set as Default Browser)', shortcut: '', action: () => send({ cmd: 'SetAsDefaultBrowser' }) },
+            { icon: '📑', title: 'สลับโหมดแท็บแนวตั้ง / แนวนอน (Toggle Vertical Tabs)', shortcut: '', action: () => send({ cmd: 'ToggleVerticalTabs' }) },
+            { icon: '❄️', title: 'Memory Saver Pro: แช่แข็งแท็บเบื้องหลังเพื่อคืนแรม', shortcut: '', action: () => send({ cmd: 'SnoozeInactiveTabs' }) },
             { icon: '🚀', title: 'ตรวจหาอัปเดตเวอร์ชันใหม่ (Check for Updates)', shortcut: '', action: () => checkForUpdates(true) },
             { icon: '✨', title: 'เปิดแท็บใหม่ (New Tab)', shortcut: 'Ctrl+T', action: () => send({ cmd: 'NewTab', url: null, incognito: false, workspace: null, pinned: false }) },
             { icon: '🕵️', title: 'เปิดแท็บไร้ตัวตน (New Incognito Tab)', shortcut: 'Ctrl+Shift+N', action: () => send({ cmd: 'NewTab', url: null, incognito: true, workspace: null, pinned: false }) },

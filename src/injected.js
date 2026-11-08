@@ -9,7 +9,11 @@
     const AD_SELECTORS = [
         'ins.adsbygoogle', '[id^="google_ads_iframe"]', '[id^="div-gpt-ad"]',
         'iframe[src*="doubleclick.net"]', 'iframe[src*="googlesyndication.com"]',
-        'iframe[src*="adnxs.com"]', '.ytd-companion-slot-renderer', '#player-ads'
+        'iframe[src*="adnxs.com"]', '.ytd-companion-slot-renderer', '#player-ads',
+        '.ad-container', '.advertisement', '.ad-box', '.ad-banner',
+        '[data-ad-unit]', '[data-ad-slot]', '[id*="-advertisement"]',
+        'iframe[src*="adsterra.com"]', 'iframe[src*="popads.net"]',
+        '.taboola-ad', '.outbrain-ad', '.criteo-ad'
     ];
 
     function isAdUrl(url) {
@@ -474,4 +478,48 @@
             e.target.muted = true;
         }
     }, true);
+
+    // =========================================================================
+    // 🛡️ Canvas & Audio Fingerprint Anti-Tracking Shield (Brave/Mullvad Grade)
+    // =========================================================================
+    try {
+        const _origGetImageData = CanvasRenderingContext2D.prototype.getImageData;
+        CanvasRenderingContext2D.prototype.getImageData = function(sx, sy, sw, sh) {
+            const imgData = _origGetImageData.apply(this, arguments);
+            if (imgData && imgData.data && imgData.data.length >= 16) {
+                const step = Math.floor(imgData.data.length / 4);
+                for (let i = 0; i < 4; i++) {
+                    const idx = (i * step) + (i % 3);
+                    imgData.data[idx] = (imgData.data[idx] + 1) % 256;
+                }
+            }
+            return imgData;
+        };
+
+        const _origToDataURL = HTMLCanvasElement.prototype.toDataURL;
+        HTMLCanvasElement.prototype.toDataURL = function() {
+            try {
+                const ctx = this.getContext('2d');
+                if (ctx && this.width > 0 && this.height > 0) {
+                    const img = ctx.getImageData(0, 0, Math.min(this.width, 16), Math.min(this.height, 16));
+                    if (img && img.data && img.data.length > 0) {
+                        img.data[0] = (img.data[0] + 1) % 256;
+                        ctx.putImageData(img, 0, 0);
+                    }
+                }
+            } catch (e) {}
+            return _origToDataURL.apply(this, arguments);
+        };
+
+        if (window.AudioBuffer && AudioBuffer.prototype.getChannelData) {
+            const _origGetChannelData = AudioBuffer.prototype.getChannelData;
+            AudioBuffer.prototype.getChannelData = function() {
+                const channelData = _origGetChannelData.apply(this, arguments);
+                if (channelData && channelData.length > 10) {
+                    channelData[5] += 0.0000001 * (Math.random() > 0.5 ? 1 : -1);
+                }
+                return channelData;
+            };
+        }
+    } catch (e) {}
 })();

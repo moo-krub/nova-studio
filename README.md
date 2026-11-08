@@ -5,11 +5,11 @@
 ### *Hyper-Performance, Privacy-First 2027 Spatial Web Browser Engineered in Rust*
 
 [![Rust 2024](https://img.shields.io/badge/Rust-2024_Edition-orange.svg?logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![Version](https://img.shields.io/badge/Version-v6.0.0-6366f1.svg?style=flat&logo=buffer)](https://github.com/nova-browser/nova-studio/releases)
-[![Platform](https://img.shields.io/badge/Platform-Windows_x64-0078d4.svg?logo=windows&logoColor=white)](https://github.com/nova-browser/nova-studio)
+[![Version](https://img.shields.io/badge/Version-v6.0.0-6366f1.svg?style=flat&logo=buffer)](https://github.com/moo-krub/nova-studio/releases)
+[![Platform](https://img.shields.io/badge/Platform-Windows_x64-0078d4.svg?logo=windows&logoColor=white)](https://github.com/moo-krub/nova-studio)
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](LICENSE)
-[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg?logo=github-actions)](https://github.com/nova-browser/nova-studio/actions)
-[![Binary Size](https://img.shields.io/badge/Binary_Size-1.4_MB-purple.svg)](https://github.com/nova-browser/nova-studio/releases)
+[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg?logo=github-actions)](https://github.com/moo-krub/nova-studio/actions)
+[![Binary Size](https://img.shields.io/badge/Binary_Size-1.4_MB-purple.svg)](https://github.com/moo-krub/nova-studio/releases)
 
 <p align="center">
   <a href="#-key-features">Key Features</a> •
@@ -111,7 +111,7 @@ Unlike monolithic browsers that consume gigabytes of RAM and package redundant C
 ## 🚀 Quick Start
 
 ### Option A: Download Standalone Release (.exe)
-1. Go to the [Releases](https://github.com/nova-browser/nova-studio/releases) page.
+1. Go to the [Releases](https://github.com/moo-krub/nova-studio/releases) page.
 2. Download `Nova-Studio-v6.0.0-x64.exe`.
 3. Run the executable directly. **No installer or admin rights required!**
 
@@ -123,7 +123,7 @@ Unlike monolithic browsers that consume gigabytes of RAM and package redundant C
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/<your-username>/nova-studio.git
+git clone https://github.com/moo-krub/nova-studio.git
 cd nova-studio
 
 # 2. Check compilation

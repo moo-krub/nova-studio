@@ -6,7 +6,7 @@ authors = ["Nova Studio Team <core@nova-studio.dev>"]
 description = "Nova Studio — Hyper-Performance 2027 Spatial Web Browser Engineered in Rust with Tao, Wry, and WebView2"
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/nova-browser/nova-studio"
+repository = "https://github.com/moo-krub/nova-studio"
 keywords = ["browser", "rust", "webview2", "wry", "adblock", "spatial-ui"]
 categories = ["web-programming", "gui"]
 

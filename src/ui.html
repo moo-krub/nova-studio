@@ -1382,7 +1382,7 @@
         async function checkForUpdates(manual = true) {
             if (manual) showToast('🔍 กำลังตรวจหาเวอร์ชันใหม่จาก GitHub...');
             try {
-                const repo = window.__NOVA_REPO || 'nova-browser/nova-studio';
+                const repo = window.__NOVA_REPO || 'moo-krub/nova-studio';
                 const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
                     headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });

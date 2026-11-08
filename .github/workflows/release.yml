@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version tag (e.g. v6.0.0)'
+        description: 'Release version tag (e.g. v6.1.0)'
         required: true
-        default: 'v6.0.0'
+        default: 'v6.1.0'
 
 permissions:
   contents: write
@@ -31,8 +31,11 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
 
-      - name: Build Release Binary
-        run: cargo build --release --locked
+      - name: Build Release Browser Binary
+        run: cargo build --release --locked --bin my_rust_browser
+
+      - name: Build Modern Setup Installer
+        run: cargo build --release --locked --bin nova-installer
 
       - name: Prepare Release Artifacts
         shell: pwsh
@@ -41,16 +44,16 @@ jobs:
           if (-not $ver -or $ver -eq "main" -or $ver -eq "master") {
             $ver = "${{ github.event.inputs.version }}"
           }
-          if (-not $ver) { $ver = "v6.0.0" }
+          if (-not $ver) { $ver = "v6.1.0" }
           
           New-Item -ItemType Directory -Path "dist" -Force
           $sourceExe = "target\release\my_rust_browser.exe"
           $portableExe = "dist\Nova-Studio-$ver-Portable.exe"
           Copy-Item $sourceExe $portableExe -Force
           
-          # Compile 1-Click Setup Installer
+          $installerSource = "target\release\nova-installer.exe"
           $setupExe = "dist\Nova-Studio-$ver-Setup.exe"
-          rustc -O -C panic=abort -C lto=fat -C codegen-units=1 src/installer.rs -o $setupExe
+          Copy-Item $installerSource $setupExe -Force
           
           # Calculate SHA-256 Checksums
           $lines = @()

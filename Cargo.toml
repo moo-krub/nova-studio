@@ -1,6 +1,6 @@
 [package]
 name = "my_rust_browser"
-version = "6.0.0"
+version = "6.1.0"
 edition = "2024"
 authors = ["Nova Studio Team <core@nova-studio.dev>"]
 description = "Nova Studio — Hyper-Performance 2027 Spatial Web Browser Engineered in Rust with Tao, Wry, and WebView2"
@@ -9,6 +9,14 @@ readme = "README.md"
 repository = "https://github.com/moo-krub/nova-studio"
 keywords = ["browser", "rust", "webview2", "wry", "adblock", "spatial-ui"]
 categories = ["web-programming", "gui"]
+
+[[bin]]
+name = "my_rust_browser"
+path = "src/main.rs"
+
+[[bin]]
+name = "nova-installer"
+path = "src/installer.rs"
 
 [dependencies]
 serde = { version = "1.0.229", features = ["derive"] }

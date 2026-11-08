@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ติดตั้ง Nova Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg-base: #07070a;
+        --bg-surface: #0e0e15;
+        --bg-card: rgba(255, 255, 255, 0.035);
+        --accent: #6366f1;
+        --accent-bright: #818cf8;
+        --accent-glow: rgba(99, 102, 241, 0.35);
+        --cyan-glow: #38bdf8;
+        --border-soft: rgba(255, 255, 255, 0.08);
+        --border-focus: rgba(129, 140, 248, 0.5);
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+        --text-muted: #64748b;
+        --radius-lg: 14px;
+        --radius-md: 10px;
+        --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+        --font-main: 'IBM Plex Sans Thai', 'Segoe UI', -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; font-family: var(--font-main); user-select: none; }
+    
+    body {
+        margin: 0;
+        padding: 24px;
+        background: var(--bg-base);
+        color: var(--text-primary);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100vh;
+        overflow: hidden;
+        background-image: 
+            radial-gradient(circle at 80% 10%, rgba(99, 102, 241, 0.14) 0%, transparent 40%),
+            radial-gradient(circle at 10% 90%, rgba(56, 189, 248, 0.12) 0%, transparent 45%);
+    }
+
+    /* Header */
+    .header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .logo-wrap {
+        position: relative;
+        width: 52px;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .logo-ring {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: conic-gradient(from 0deg, #38bdf8, #818cf8, #c084fc, #38bdf8);
+        filter: blur(8px);
+        opacity: 0.65;
+        animation: spin 10s linear infinite;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .logo-inner {
+        position: relative;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #0d0e17;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .title-group h1 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+        background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #94a3b8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .title-group p {
+        margin: 2px 0 0 0;
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+
+    /* Main Content Screen */
+    .screen {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        margin-top: 10px;
+    }
+
+    /* Card */
+    .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius-lg);
+        padding: 14px 16px;
+        backdrop-filter: blur(12px);
+    }
+
+    .section-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Drive Chips */
+    .drive-chips {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+    .drive-chip {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 12px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        font-size: 12px;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.16s var(--ease-spring);
+    }
+    .drive-chip:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: var(--accent-bright);
+    }
+    .drive-chip.active {
+        background: rgba(99, 102, 241, 0.16);
+        border-color: var(--accent-bright);
+        color: #fff;
+        box-shadow: 0 0 12px rgba(99, 102, 241, 0.25);
+    }
+    .drive-free {
+        font-size: 11px;
+        color: var(--cyan-glow);
+        font-weight: 600;
+    }
+
+    /* Path Selector Input */
+    .path-row {
+        display: flex;
+        gap: 8px;
+    }
+    .path-input {
+        flex: 1;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius-md);
+        padding: 8px 12px;
+        color: var(--text-primary);
+        font-size: 12px;
+        outline: none;
+        transition: border-color 0.18s ease;
+        user-select: text;
+    }
+    .path-input:focus {
+        border-color: var(--accent-bright);
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+    .browse-btn {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--border-soft);
+        color: var(--text-primary);
+        padding: 0 14px;
+        border-radius: var(--radius-md);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.16s ease;
+    }
+    .browse-btn:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .folder-hint {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 6px;
+    }
+
+    /* Options checklist */
+    .options-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .opt-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        color: var(--text-primary);
+        cursor: pointer;
+    }
+    .opt-label input[type="checkbox"] {
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        border: 1px solid var(--border-soft);
+        background: rgba(255, 255, 255, 0.04);
+        outline: none;
+        cursor: pointer;
+        display: grid;
+        place-content: center;
+        transition: all 0.15s ease;
+    }
+    .opt-label input[type="checkbox"]:checked {
+        background: var(--accent);
+        border-color: var(--accent-bright);
+        box-shadow: 0 0 8px var(--accent-glow);
+    }
+    .opt-label input[type="checkbox"]:checked::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        background: #fff;
+        clip-path: polygon(14% 44%, 0 60%, 40% 100%, 100% 16%, 80% 0%, 36% 68%);
+    }
+
+    /* Action Footer */
+    .footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 10px;
+        border-top: 1px solid var(--border-soft);
+    }
+    .size-info {
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+    .btn-install {
+        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #38bdf8 100%);
+        border: none;
+        color: white;
+        padding: 10px 24px;
+        border-radius: var(--radius-md);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 4px 18px var(--accent-glow);
+        transition: all 0.2s var(--ease-spring);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-install:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 22px rgba(99, 102, 241, 0.5);
+    }
+    .btn-install:active {
+        transform: translateY(1px);
+    }
+
+    /* Progress Screen */
+    #progressScreen {
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        height: 280px;
+        gap: 16px;
+    }
+    .progress-bar-wrap {
+        width: 100%;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+        overflow: hidden;
+        position: relative;
+    }
+    .progress-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #6366f1, #38bdf8, #a855f7);
+        border-radius: 999px;
+        transition: width 0.3s ease;
+        box-shadow: 0 0 12px var(--cyan-glow);
+    }
+    .progress-status {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+    .step-log {
+        font-size: 11px;
+        color: var(--text-muted);
+        line-height: 1.6;
+        min-height: 20px;
+    }
+
+    /* Complete Screen */
+    #completeScreen {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        height: 280px;
+        gap: 14px;
+    }
+    .success-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: rgba(16, 185, 129, 0.15);
+        border: 2px solid #10b981;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #34d399;
+        font-size: 26px;
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+    }
+</style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <div class="header">
+        <div class="logo-wrap">
+            <div class="logo-ring"></div>
+            <div class="logo-inner">
+                <svg viewBox="0 0 32 32" width="26" height="26">
+                    <defs>
+                        <linearGradient id="novaPlanetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#38bdf8"/>
+                            <stop offset="50%" stop-color="#818cf8"/>
+                            <stop offset="100%" stop-color="#c084fc"/>
+                        </linearGradient>
+                        <linearGradient id="novaRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#f43f5e" stop-opacity="0.85"/>
+                            <stop offset="50%" stop-color="#fbbf24" stop-opacity="0.95"/>
+                            <stop offset="100%" stop-color="#34d399" stop-opacity="0.85"/>
+                        </linearGradient>
+                    </defs>
+                    <circle cx="16" cy="16" r="14" fill="rgba(129, 140, 248, 0.14)"/>
+                    <path d="M 4 17 A 14 5 35 0 1 27 12" fill="none" stroke="url(#novaRingGrad)" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+                    <circle cx="16" cy="16" r="8.5" fill="url(#novaPlanetGrad)"/>
+                    <circle cx="13" cy="13" r="3.2" fill="rgba(255, 255, 255, 0.38)"/>
+                    <path d="M 27 12 A 14 5 35 0 1 5 19" fill="none" stroke="url(#novaRingGrad)" stroke-width="2.2" stroke-linecap="round"/>
+                </svg>
+            </div>
+        </div>
+        <div class="title-group">
+            <h1>ติดตั้ง Nova Studio</h1>
+            <p>2027 Spatial Web Browser • Hyper-Performance Engine (v6.1.0)</p>
+        </div>
+    </div>
+
+    <!-- Screen 1: Options & Drive Selector -->
+    <div id="setupScreen" class="screen">
+        <!-- Install Location Card -->
+        <div class="card">
+            <div class="section-label">
+                <span>เลือกไดรฟ์และตำแหน่งติดตั้ง</span>
+                <span id="diskFreeLabel" style="color:var(--cyan-glow);">กำลังตรวจหาไดรฟ์...</span>
+            </div>
+            
+            <!-- Quick Drive Switcher -->
+            <div id="driveChips" class="drive-chips"></div>
+
+            <div class="path-row">
+                <input id="installPath" class="path-input" type="text" value="" spellcheck="false" />
+                <button class="browse-btn" onclick="browseFolder()">
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 3.5A1.5 1.5 0 0 1 3 2h3l2 2h5a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 13 14H3a1.5 1.5 0 0 1-1.5-1.5v-9z"/></svg>
+                    เรียกดู...
+                </button>
+            </div>
+            <div class="folder-hint">✨ ระบบจะสร้างโฟลเดอร์ปลายทางให้อัตโนมัติหากยังไม่มีอยู่</div>
+        </div>
+
+        <!-- Options Card -->
+        <div class="card">
+            <div class="section-label">ตัวเลือกการติดตั้ง</div>
+            <div class="options-group">
+                <label class="opt-label">
+                    <input id="chkDesktop" type="checkbox" checked />
+                    <span>สร้างทางลัดบนหน้าจอเดสก์ท็อป (Desktop Shortcut)</span>
+                </label>
+                <label class="opt-label">
+                    <input id="chkStartMenu" type="checkbox" checked />
+                    <span>เพิ่มลงใน Start Menu ของ Windows</span>
+                </label>
+                <label class="opt-label">
+                    <input id="chkDefault" type="checkbox" checked />
+                    <span>ตั้ง Nova Studio เป็นเบราว์เซอร์หลัก (Set as Default Browser)</span>
+                </label>
+                <label class="opt-label">
+                    <input id="chkLaunch" type="checkbox" checked />
+                    <span>เปิดใช้งาน Nova Studio ทันทีหลังติดตั้งเสร็จ</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen 2: Installing Progress -->
+    <div id="progressScreen">
+        <div style="text-align:center;margin-bottom:8px;">
+            <h2 id="progressTitle" style="font-size:16px;margin:0;font-weight:600;">กำลังติดตั้ง Nova Studio...</h2>
+        </div>
+        <div class="progress-bar-wrap">
+            <div id="progressFill" class="progress-fill"></div>
+        </div>
+        <div class="progress-status">
+            <span id="stepText">กำลังเริ่มต้นระบบ...</span>
+            <span id="pctText" style="font-weight:700;color:var(--cyan-glow);">0%</span>
+        </div>
+        <div id="stepLog" class="step-log">📁 กำลังตรวจสอบไดรฟ์และสิทธิ์การเขียน...</div>
+    </div>
+
+    <!-- Screen 3: Complete Screen -->
+    <div id="completeScreen">
+        <div class="success-icon">✓</div>
+        <h2 style="font-size:18px;margin:0;font-weight:700;">ติดตั้ง Nova Studio เรียบร้อยแล้ว!</h2>
+        <p style="font-size:12px;color:var(--text-secondary);margin:0;max-width:360px;">
+            เบราว์เซอร์พร้อมทำงานด้วยประสิทธิภาพสูงสุดแล้ว ขอบคุณที่ร่วมเดินทางสู่ปี 2027
+        </p>
+        <button id="btnFinishLaunch" class="btn-install" style="margin-top:10px;" onclick="finishAndLaunch()">
+            🚀 เริ่มใช้งาน Nova Studio
+        </button>
+    </div>
+
+    <!-- Footer Controls -->
+    <div id="footerControls" class="footer">
+        <div class="size-info">
+            พื้นที่ที่ต้องการ: <strong>~15 MB</strong> • สถาปัตยกรรม: <strong>x64 Native</strong>
+        </div>
+        <button class="btn-install" onclick="startInstall()">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8.5 1.5v7.793l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L7.5 9.293V1.5a.5.5 0 0 1 1 0z"/><path d="M2 12.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/></svg>
+            ติดตั้งทันที
+        </button>
+    </div>
+
+<script>
+    let appDataDefault = '';
+    let availableDrives = [];
+    let targetInstalledExe = '';
+
+    function send(msg) {
+        if (window.ipc) {
+            window.ipc.postMessage(JSON.stringify(msg));
+        } else {
+            console.log('IPC message:', msg);
+        }
+    }
+
+    // เรียกดูโฟลเดอร์ผ่าน Native Windows Dialog
+    function browseFolder() {
+        send({ cmd: 'BrowseFolder', current: document.getElementById('installPath').value });
+    }
+
+    // Callback เมื่อเลือกโฟลเดอร์จากหน้าต่าง Windows
+    window.onFolderSelected = function(selectedPath) {
+        if (selectedPath) {
+            // เติมโฟลเดอร์ \NovaStudio หากปลายทางยังไม่มี
+            let p = selectedPath.replace(/[\\\/]+$/, '');
+            if (!p.toLowerCase().endsWith('novastudio')) {
+                p = p + '\\NovaStudio';
+            }
+            document.getElementById('installPath').value = p;
+            updateDriveChipSelection(p);
+        }
+    };
+
+    // Callback รับข้อมูลไดรฟ์และตำแหน่งเริ่มต้นจาก Rust
+    window.initInstallerData = function(data) {
+        appDataDefault = data.defaultPath;
+        availableDrives = data.drives || [];
+
+        // กำหนดตำแหน่งเริ่มต้น
+        document.getElementById('installPath').value = appDataDefault;
+
+        // เรนเดอร์ชิปไดรฟ์
+        const container = document.getElementById('driveChips');
+        container.innerHTML = '';
+
+        availableDrives.forEach((d, idx) => {
+            const chip = document.createElement('div');
+            chip.className = 'drive-chip' + (idx === 0 ? ' active' : '');
+            chip.innerHTML = `
+                <span>${d.letter === 'C' ? '💾' : '🚀'} ไดรฟ์ <strong>${d.letter}:</strong></span>
+                <span class="drive-free">(${d.freeGb} GB ว่าง)</span>
+            `;
+            chip.onclick = () => {
+                selectDrive(d);
+            };
+            container.appendChild(chip);
+        });
+
+        if (availableDrives.length > 0) {
+            updateDriveChipSelection(appDataDefault);
+        }
+    };
+
+    function selectDrive(drive) {
+        let newPath = '';
+        if (drive.letter === 'C') {
+            newPath = appDataDefault || 'C:\\Program Files\\NovaStudio';
+        } else {
+            newPath = `${drive.letter}:\\NovaStudio`;
+        }
+        document.getElementById('installPath').value = newPath;
+        updateDriveChipSelection(newPath);
+    }
+
+    function updateDriveChipSelection(path) {
+        const driveLetter = (path.charAt(0) || '').toUpperCase();
+        const chips = document.querySelectorAll('.drive-chip');
+        let matched = false;
+        chips.forEach((c, idx) => {
+            const d = availableDrives[idx];
+            if (d && d.letter.toUpperCase() === driveLetter) {
+                c.classList.add('active');
+                document.getElementById('diskFreeLabel').textContent = `ว่าง ${d.freeGb} GB บนไดรฟ์ ${d.letter}:`;
+                matched = true;
+            } else {
+                c.classList.remove('active');
+            }
+        });
+        if (!matched) {
+            document.getElementById('diskFreeLabel').textContent = 'โฟลเดอร์กำหนดเอง';
+        }
+    }
+
+    document.getElementById('installPath').addEventListener('input', (e) => {
+        updateDriveChipSelection(e.target.value);
+    });
+
+    // เริ่มการติดตั้ง
+    function startInstall() {
+        const path = document.getElementById('installPath').value.trim();
+        if (!path) {
+            alert('กรุณาระบุโฟลเดอร์สำหรับติดตั้ง');
+            return;
+        }
+
+        const payload = {
+            cmd: 'StartInstall',
+            installDir: path,
+            desktopShortcut: document.getElementById('chkDesktop').checked,
+            startMenuShortcut: document.getElementById('chkStartMenu').checked,
+            setDefaultBrowser: document.getElementById('chkDefault').checked,
+            launchAfter: document.getElementById('chkLaunch').checked
+        };
+
+        // สลับไปยังหน้าสถานะความคืบหน้า
+        document.getElementById('setupScreen').style.display = 'none';
+        document.getElementById('footerControls').style.display = 'none';
+        document.getElementById('progressScreen').style.display = 'flex';
+
+        send(payload);
+    }
+
+    // Callback อัปเดตความคืบหน้าจาก Rust
+    window.updateInstallProgress = function(pct, stepMsg, logDetail) {
+        document.getElementById('progressFill').style.width = pct + '%';
+        document.getElementById('pctText').textContent = pct + '%';
+        if (stepMsg) document.getElementById('stepText').textContent = stepMsg;
+        if (logDetail) document.getElementById('stepLog').textContent = logDetail;
+    };
+
+    // Callback เมื่อติดตั้งเสร็จสิ้น
+    window.onInstallComplete = function(targetExe, autoLaunched) {
+        targetInstalledExe = targetExe;
+        if (autoLaunched) {
+            // ปิดตัวติดตั้งทันทีหลังเปิดโปรแกรม
+            setTimeout(() => {
+                send({ cmd: 'CloseInstaller' });
+            }, 800);
+            return;
+        }
+
+        document.getElementById('progressScreen').style.display = 'none';
+        document.getElementById('completeScreen').style.display = 'flex';
+    };
+
+    function finishAndLaunch() {
+        send({ cmd: 'LaunchApp', targetExe: targetInstalledExe });
+        setTimeout(() => send({ cmd: 'CloseInstaller' }), 300);
+    }
+
+    // เริ่มต้นเมื่อโหลดหน้าเสร็จ
+    window.addEventListener('DOMContentLoaded', () => {
+        send({ cmd: 'Ready' });
+    });
+</script>
+</body>
+</html>

@@ -1303,15 +1303,15 @@
 
         <!-- Segmented Workspaces -->
         <div class="ws-group">
-            <button id="ws-main" class="ws-btn active" onclick="send({cmd:'SwitchWorkspace', workspace:'main'})">
+            <button id="ws-main" class="ws-btn active" onclick="switchWorkspaceUi('main')">
                 <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 6.5L8 2l5.5 4.5v6.5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1V6.5z"/></svg>
                 ทั่วไป
             </button>
-            <button id="ws-work" class="ws-btn" onclick="send({cmd:'SwitchWorkspace', workspace:'work'})">
+            <button id="ws-work" class="ws-btn" onclick="switchWorkspaceUi('work')">
                 <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4.5" width="12" height="9" rx="1.5"/><path d="M5.5 4.5V3a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1.5"/></svg>
                 ทำงาน
             </button>
-            <button id="ws-ai" class="ws-btn" onclick="send({cmd:'SwitchWorkspace', workspace:'ai'})">
+            <button id="ws-ai" class="ws-btn" onclick="switchWorkspaceUi('ai')">
                 <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1.5v3M8 11.5v3M1.5 8h3M11.5 8h3M3.4 3.4l2.1 2.1M10.5 10.5l2.1 2.1M12.6 3.4l-2.1 2.1M5.5 10.5l-2.1 2.1"/></svg>
                 AI Lab
             </button>
@@ -1564,7 +1564,6 @@
         const themes = ['aurora', 'paper', 'meadow', 'soda', 'zine', 'night', 'gx', 'matrix'];
         let currentThemeIdx = 0;
 
-        async 
         // =========================================================
         // IN-APP AUTO-UPDATER ENGINE (CHROME / BRAVE / ARC STYLE)
         // =========================================================
@@ -1732,6 +1731,17 @@
             } else {
                 handlePreviewSimulation(payload);
             }
+        }
+
+        function switchWorkspaceUi(ws) {
+            ['main', 'work', 'ai'].forEach(w => {
+                const el = document.getElementById('ws-' + w);
+                if (el) {
+                    if (w === ws) el.classList.add('active');
+                    else el.classList.remove('active');
+                }
+            });
+            send({ cmd: 'SwitchWorkspace', workspace: ws });
         }
 
         function navigate() {

@@ -972,6 +972,7 @@ fn main() -> wry::Result<()> {
 
                     UiCommand::SwitchWorkspace { workspace } => {
                         current_workspace = workspace;
+                        storage.active_workspace = current_workspace.clone();
                         if let Some(&first_id) = tab_order.iter().rev().find(|&&id| {
                             tabs.get(&id).map(|t| t.workspace == current_workspace).unwrap_or(false)
                         }) {
@@ -1758,7 +1759,7 @@ fn sync_all_views(
 
     for &id in tab_order {
         if let Some(tab) = tabs.get(&id) {
-            if id == active_id {
+            if id == active_id && tab.workspace == current_workspace {
                 let w = if second_id.is_some() { avail_width * 0.5 } else { avail_width };
                 let _ = tab.webview.set_bounds(Rect {
                     position: LogicalPosition::new(0.0, normal_ui_h).into(),

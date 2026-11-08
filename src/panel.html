@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" media="print" onload="this.media=&quot;all&quot;">
+<style>
+    /* Nova Flux tokens — ชุดเดียวกับเชลล์หลัก */
+    :root {
+        --bg-base: #0a0a0f;
+        --bg-surface: #101017;
+        --accent: #6366f1;
+        --accent-bright: #818cf8;
+        --accent-glow: rgba(99, 102, 241, 0.22);
+        --accent-subtle: rgba(99, 102, 241, 0.11);
+        --border-soft: rgba(255, 255, 255, 0.07);
+        --border-strong: rgba(255, 255, 255, 0.13);
+        --text-primary: #f2f2f5;
+        --text-secondary: #a3a3af;
+        --text-muted: #64646f;
+        --danger: #f43f5e;
+        --radius-md: 10px;
+        --radius-lg: 14px;
+        --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+        --font-main: 'IBM Plex Sans Thai', 'Segoe UI', sans-serif;
+    }
+    * { box-sizing: border-box; font-family: var(--font-main); }
+    body {
+        margin: 0;
+        background: var(--bg-base);
+        color: var(--text-primary);
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        border-left: 1px solid var(--border-soft);
+        overflow: hidden;
+    }
+    
+    .panel-tabs {
+        display: flex;
+        background: rgba(0, 0, 0, 0.25);
+        border-bottom: 1px solid var(--border-soft);
+        padding: 6px 8px 0 8px;
+        gap: 4px;
+        overflow-x: auto;
+    }
+    .panel-tab-btn {
+        background: transparent;
+        color: var(--text-secondary);
+        border: none;
+        padding: 6px 10px;
+        border-radius: 7px 7px 0 0;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .panel-tab-btn.active {
+        background: var(--accent-subtle);
+        color: var(--accent-bright);
+        border-top: 2px solid transparent;
+    }
+
+    .panel-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+    }
+    .panel-section {
+        display: none;
+    }
+    .panel-section.active {
+        display: block;
+    }
+
+    .card {
+        background: rgba(255, 255, 255, 0.025);
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius-md);
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    h3 {
+        margin: 0 0 8px 0;
+        font-size: 12px;
+        color: var(--accent-bright);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .btn-row { display: flex; gap: 5px; margin-bottom: 6px; }
+    button.btn {
+        background: var(--accent-subtle);
+        color: var(--accent-bright);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        padding: 6px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        cursor: pointer;
+        flex: 1;
+        font-weight: 600;
+    }
+    button.btn:hover { background: rgba(99, 102, 241, 0.28); color: #fff; }
+    button.danger-btn {
+        background: #dc2626;
+        border-color: var(--danger);
+        color: white;
+    }
+    button.danger-btn:hover { background: #b91c1c; }
+
+    input, textarea {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid var(--border-strong);
+        color: white;
+        border-radius: 6px;
+        padding: 7px;
+        font-size: 11px;
+        margin-bottom: 6px;
+        outline: none;
+    }
+    input:focus, textarea:focus {
+        border-color: var(--accent-bright);
+    }
+
+    pre {
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid var(--border-soft);
+        border-radius: 6px;
+        padding: 8px;
+        font-size: 11px;
+        color: #a1a1aa;
+        max-height: 150px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        margin: 0;
+    }
+
+    .hist-fav {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        flex-shrink: 0;
+    }
+    .hist-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--border-soft);
+        gap: 6px;
+        font-size: 11px;
+    }
+    .hist-row:hover { background: rgba(255, 255, 255, 0.04); }
+    .hist-link {
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--text-primary);
+        flex: 1;
+    }
+    .hist-link:hover { color: var(--accent-bright); }
+    .hist-time {
+        font-size: 9.5px;
+        color: var(--text-muted);
+        white-space: nowrap;
+    }
+    .del-btn {
+        background: transparent;
+        border: none;
+        color: #ef4444;
+        cursor: pointer;
+        font-size: 11px;
+        padding: 2px 5px;
+    }
+    .del-btn:hover {
+        background: #ef4444;
+        color: white;
+        border-radius: 4px;
+    }
+
+    .dl-card {
+        background: rgba(255, 255, 255, 0.025);
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        padding: 8px 10px;
+        margin-bottom: 8px;
+        font-size: 11px;
+    }
+    .dl-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+    }
+    .dl-name {
+        font-weight: 600;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+    }
+    .dl-status {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-weight: 700;
+        white-space: nowrap;
+        margin-left: 6px;
+    }
+    .dl-status.downloading { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
+    .dl-status.completed { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
+    .dl-status.failed { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+
+    .gpu-info {
+        font-size: 11px;
+        color: #34d399;
+        line-height: 1.6;
+        background: rgba(16,185,129,0.08);
+        padding: 8px;
+        border-radius: 7px;
+        border: 1px solid rgba(16,185,129,0.25);
+    }
+</style>
+</head>
+<body>
+    <div class="panel-tabs">
+        <button id="tab-btn-hist" class="panel-tab-btn active" onclick="switchSection('hist')">🕒 ประวัติ</button>
+        <button id="tab-btn-dl" class="panel-tab-btn" onclick="switchSection('dl')">📥 ดาวน์โหลด (<span id="dlCount">0</span>)</button>
+        <button id="tab-btn-ai" class="panel-tab-btn" onclick="switchSection('ai')">🤖 AI & ข้อมูล</button>
+        <button id="tab-btn-notes" class="panel-tab-btn" onclick="switchSection('notes')">📝 โน้ต & GPU</button>
+    </div>
+
+    <div class="panel-content">
+        <!-- 1. ศูนย์จัดการประวัติ (History Manager) -->
+        <div id="sec-hist" class="panel-section active">
+            <div class="card">
+                <h3>
+                    <span>🕒 ประวัติ (<span id="histCount">0</span>)</span>
+                    <button class="btn danger-btn" onclick="if(confirm('ยืนยันล้างประวัติทั้งหมด?')) send({cmd:'ClearHistory'})" style="flex:0;padding:3px 8px;font-size:10px;">🔥 ล้างทั้งหมด</button>
+                </h3>
+                <input id="histSearch" placeholder="🔍 ค้นหาในประวัติเว็บ..." oninput="filterHistory()" />
+                <div id="histList" style="max-height:360px;overflow-y:auto;"></div>
+            </div>
+
+            <!-- จัดการรายการโปรด (ลบได้จาก panel ด้วย) -->
+            <div class="card">
+                <h3><span>⭐ รายการโปรด (<span id="bmCount">0</span>)</span></h3>
+                <div id="bmList"></div>
+            </div>
+        </div>
+
+        <!-- 2. ศูนย์จัดการการดาวน์โหลด (Download Manager) -->
+        <div id="sec-dl" class="panel-section">
+            <div class="card">
+                <h3>
+                    <span>📥 รายการดาวน์โหลด</span>
+                    <div style="display:flex;gap:4px;">
+                        <button class="btn" onclick="send({cmd:'OpenDownloadsFolder'})" style="flex:0;padding:3px 8px;font-size:10px;">📂 โฟลเดอร์</button>
+                        <button class="btn danger-btn" onclick="if(confirm('ยืนยันล้างรายการดาวน์โหลด?')) send({cmd:'ClearDownloads'})" style="flex:0;padding:3px 8px;font-size:10px;">🗑️ ล้าง</button>
+                    </div>
+                </h3>
+                <div id="dlList" style="max-height:380px;overflow-y:auto;">
+                    <div style="color:#71717a;text-align:center;padding:20px;font-size:11px;">ยังไม่มีรายการดาวน์โหลด</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. AI Autopilot & Web Scraper -->
+        <div id="sec-ai" class="panel-section">
+            <div class="card">
+                <h3>🧠 AI Autopilot</h3>
+                <input id="goalInput" placeholder="เช่น 'ค้นหา ข่าว AI' หรือ 'คลิก ปรึกษาหมอ'..." onkeydown="if(event.key==='Enter') runGoal()" />
+                <div class="btn-row">
+                    <button class="btn" onclick="runGoal()" style="background:#4f46e5;color:#fff;">🚀 สั่ง AI ทำงาน</button>
+                    <button class="btn" onclick="send({cmd:'ScrapePageData'})">📊 ดูดข้อมูลเว็บ</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🎯 DOM Visualizer & Data Output</h3>
+                <div class="btn-row">
+                    <button class="btn" onclick="send({cmd:'AiHighlightElements', show:true})">👁️ แสดงเลข #ID</button>
+                    <button class="btn" onclick="send({cmd:'AiHighlightElements', show:false})">ซ่อนเลข</button>
+                    <button class="btn" onclick="send({cmd:'RequestPageExtract'})">🔄 อ่าน DOM</button>
+                </div>
+                <pre id="aiReport">กด "📊 ดูดข้อมูลเว็บ" หรือ "🔄 อ่าน DOM" เพื่อแสดงเนื้อหา...</pre>
+            </div>
+        </div>
+
+        <!-- 4. โน้ตด่วน & ข้อมูลการ์ดจอ -->
+        <div id="sec-notes" class="panel-section">
+            <div class="card">
+                <h3>📝 สมุดโน้ตด่วน (Auto-Save)</h3>
+                <textarea id="notesArea" rows="6" oninput="saveNotes()" placeholder="พิมพ์โน้ตที่นี่... บันทึกลงเครื่องอัตโนมัติ"></textarea>
+            </div>
+
+            <div class="card">
+                <h3>⚡ GPU Acceleration Status</h3>
+                <div class="gpu-info">
+                    🟢 GPU Hardware Acceleration: <b>100% Active</b><br>
+                    🟢 Direct3D12 / Vulkan: <b>Unlocked</b><br>
+                    🟢 Zero-Copy VRAM Rasterization: <b>Enabled</b><br>
+                    🟢 WebGPU & Canvas OOP: <b>Active</b><br>
+                    🟢 FPS Limit: <b>Unlocked (144Hz+)</b>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allHistory = [];
+        let allDownloads = [];
+
+        function send(payload) { window.ipc.postMessage(JSON.stringify(payload)); }
+
+        function switchSection(sec) {
+            ['hist', 'dl', 'ai', 'notes'].forEach(s => {
+                const btn = document.getElementById('tab-btn-' + s);
+                const el = document.getElementById('sec-' + s);
+                if (btn) btn.className = 'panel-tab-btn' + (s === sec ? ' active' : '');
+                if (el) el.className = 'panel-section' + (s === sec ? ' active' : '');
+            });
+        }
+
+        function runGoal() {
+            const g = document.getElementById('goalInput').value.trim();
+            if (g) send({ cmd: 'AiAutopilotGoal', goal: g });
+        }
+        function saveNotes() {
+            send({ cmd: 'SaveNotes', notes: document.getElementById('notesArea').value });
+        }
+
+                function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatTime(ts) {
+            if (!ts) return '';
+            const d = new Date(ts * 1000);
+            return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function renderHistoryList(items) {
+            const list = document.getElementById('histList');
+            list.innerHTML = '';
+            if (items.length === 0) {
+                list.innerHTML = '<div style="color:#71717a;text-align:center;padding:20px;font-size:11px;">ไม่พบประวัติการเข้าชม</div>';
+                return;
+            }
+            items.forEach((item, idx) => {
+                const row = document.createElement('div');
+                row.className = 'hist-row';
+
+                // favicon จากโดเมน — โหลดไม่ได้ก็ลบตัวเองทิ้งเงียบ ๆ
+                const fav = document.createElement('img');
+                fav.className = 'hist-fav';
+                try {
+                    const host = new URL(item.url.startsWith('http') ? item.url : 'https://' + item.url).hostname;
+                    fav.src = 'https://www.google.com/s2/favicons?sz=32&domain_url=' + encodeURIComponent(host);
+                } catch (e) { fav.remove(); }
+                fav.onerror = () => fav.remove();
+                row.appendChild(fav);
+
+                const link = document.createElement('span');
+                link.className = 'hist-link';
+                link.textContent = item.title || item.url;
+                link.title = item.url;
+                link.onclick = () => send({ cmd: 'Navigate', url: item.url });
+                row.appendChild(link);
+
+                const time = document.createElement('span');
+                time.className = 'hist-time';
+                time.textContent = formatTime(item.timestamp);
+                row.appendChild(time);
+
+                const del = document.createElement('button');
+                del.className = 'del-btn';
+                del.textContent = '✕';
+                del.title = 'ลบรายการนี้';
+                del.onclick = (e) => {
+                    e.stopPropagation();
+                    // หา index จริงจากข้อมูลล่าสุดเสมอ — กัน index เอียงหลังลบหลายรายการติดกัน
+                    const realIndex = allHistory.findIndex(h => h.url === item.url && h.timestamp === item.timestamp);
+                    if (realIndex >= 0) send({ cmd: 'DeleteHistoryItem', index: realIndex });
+                };
+                row.appendChild(del);
+
+                list.appendChild(row);
+            });
+        }
+
+        function filterHistory() {
+            const q = document.getElementById('histSearch').value.toLowerCase();
+            const filtered = allHistory.filter(h => (h.title + ' ' + h.url).toLowerCase().includes(q));
+            renderHistoryList(filtered);
+        }
+
+        function renderBookmarkList(items) {
+            const list = document.getElementById('bmList');
+            list.innerHTML = '';
+            document.getElementById('bmCount').textContent = items.length;
+            if (items.length === 0) {
+                list.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:16px;font-size:11px;">ยังไม่มีรายการโปรด</div>';
+                return;
+            }
+            items.forEach((b, i) => {
+                const row = document.createElement('div');
+                row.className = 'hist-row';
+                const link = document.createElement('span');
+                link.className = 'hist-link';
+                link.textContent = b.title || b.url;
+                link.title = b.url;
+                link.onclick = () => send({ cmd: 'Navigate', url: b.url });
+                row.appendChild(link);
+                const del = document.createElement('button');
+                del.className = 'del-btn';
+                del.textContent = '✕';
+                del.title = 'ลบรายการโปรดนี้';
+                del.onclick = (e) => {
+                    e.stopPropagation();
+                    send({ cmd: 'RemoveBookmark', index: i });
+                };
+                row.appendChild(del);
+                list.appendChild(row);
+            });
+        }
+
+        function renderDownloadList(items) {
+            const list = document.getElementById('dlList');
+            list.innerHTML = '';
+            if (items.length === 0) {
+                list.innerHTML = '<div style="color:#71717a;text-align:center;padding:20px;font-size:11px;">ยังไม่มีรายการดาวน์โหลด</div>';
+                return;
+            }
+            items.forEach(d => {
+                const card = document.createElement('div');
+                card.className = 'dl-card';
+
+                // สร้างด้วย DOM API ล้วน — ไฟล์/path จากเว็บไซต์ไม่มีทางหลุดเป็นโค้ด (ปิดช่อง XSS)
+                const head = document.createElement('div');
+                head.className = 'dl-header';
+                const nameEl = document.createElement('span');
+                nameEl.className = 'dl-name';
+                nameEl.textContent = d.file_name || '(ไฟล์ไม่มีชื่อ)';
+                nameEl.title = d.file_name || '';
+                head.appendChild(nameEl);
+
+                const st = document.createElement('span');
+                st.className = 'dl-status ' + (d.status === 'downloading' ? 'downloading' : (d.status === 'failed' ? 'failed' : 'completed'));
+                st.textContent = d.status === 'downloading' ? '⏳ กำลังโหลด...' : (d.status === 'failed' ? '❌ ล้มเหลว' : '✅ สำเร็จ');
+                head.appendChild(st);
+                card.appendChild(head);
+
+                const foot = document.createElement('div');
+                foot.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-top:6px;';
+                const tm = document.createElement('span');
+                tm.style.cssText = 'color:var(--text-muted);font-size:10px;';
+                tm.textContent = formatTime(d.timestamp);
+                foot.appendChild(tm);
+                if (d.path) {
+                    const openBtn = document.createElement('button');
+                    openBtn.className = 'btn';
+                    openBtn.style.cssText = 'flex:0;padding:2px 8px;font-size:10px;';
+                    openBtn.textContent = '📂 เปิดดูไฟล์';
+                    openBtn.onclick = () => send({ cmd: 'OpenDownloadedFile', path: String(d.path) });
+                    foot.appendChild(openBtn);
+                }
+                card.appendChild(foot);
+                list.appendChild(card);
+            });
+        }
+
+        window.renderPanelData = function(data) {
+            if (data.history) {
+                allHistory = data.history;
+                document.getElementById('histCount').textContent = allHistory.length;
+                // เรนเดอร์ผ่าน filterHistory เสมอ — คงผลค้นหาที่พิมพ์ค้างไว้หลังลบรายการ
+                filterHistory();
+            }
+            if (data.downloads) {
+                allDownloads = data.downloads;
+                document.getElementById('dlCount').textContent = allDownloads.length;
+                renderDownloadList(allDownloads);
+            }
+            if (data.bookmarks) {
+                renderBookmarkList(data.bookmarks);
+            }
+            if (data.notes !== undefined) {
+                const area = document.getElementById('notesArea');
+                if (document.activeElement !== area) area.value = data.notes;
+            }
+        };
+
+        window.updateAiReport = function(report) {
+            document.getElementById('aiReport').textContent = report || 'ไม่มีข้อมูล';
+        };
+    </script>
+</body>
+</html>

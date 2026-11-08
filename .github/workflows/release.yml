@@ -1,0 +1,68 @@
+name: Release Nova Studio
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version tag (e.g. v6.0.0)'
+        required: true
+        default: 'v6.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Release Windows Binary
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build Release Binary
+        run: cargo build --release --locked
+
+      - name: Prepare Release Artifacts
+        shell: pwsh
+        run: |
+          $ver = "${{ github.ref_name }}"
+          if (-not $ver -or $ver -eq "main" -or $ver -eq "master") {
+            $ver = "${{ github.event.inputs.version }}"
+          }
+          if (-not $ver) { $ver = "v6.0.0" }
+          
+          New-Item -ItemType Directory -Path "dist" -Force
+          $sourceExe = "target\release\my_rust_browser.exe"
+          $targetExe = "dist\Nova-Studio-$ver-x64.exe"
+          Copy-Item $sourceExe $targetExe -Force
+          
+          # Calculate SHA-256 Checksum
+          $hash = (Get-FileHash -Path $targetExe -Algorithm SHA256).Hash.ToLower()
+          "$hash  Nova-Studio-$ver-x64.exe" | Out-File -FilePath "dist\checksums-sha256.txt" -Encoding ascii
+          
+          Write-Host "✅ Artifact built successfully: $targetExe"
+          Write-Host "✅ SHA256: $hash"
+
+      - name: Create GitHub Release & Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/Nova-Studio-*.exe
+            dist/checksums-sha256.txt
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

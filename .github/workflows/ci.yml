@@ -1,0 +1,30 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  check-and-lint:
+    name: Cargo Check & Build
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Cargo Check
+        run: cargo check --release
+
+      - name: Cargo Build
+        run: cargo build --release

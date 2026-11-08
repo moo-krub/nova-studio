@@ -1,0 +1,42 @@
+# =========================================================================
+# Nova Studio — Git Ignore Rules (Production Standard)
+# =========================================================================
+
+# Rust Cargo build artifacts
+/target/
+**/*.rs.bk
+
+# User local data & runtime persistence (Never commit user history/passwords)
+nova_browser_data.json
+nova_browser_data.json.tmp
+*.tmp
+*.log
+run.log
+
+# Operating System Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# IDE and Editor Directories
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# Internal Tooling & Agent Artifacts
+.mimosa/
+.v2c/
+.video_agent/
+.cargo/
+
+# Standalone Executable Binaries (Distributed via GitHub Releases)
+*.exe
+*.dll
+*.pdb
+*.msi
+*.setup

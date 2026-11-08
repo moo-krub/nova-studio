@@ -26,6 +26,8 @@ use tao::{
 use wry::{Rect, WebView, WebViewBuilder};
 
 #[cfg(windows)]
+use tao::platform::windows::WindowBuilderExtWindows;
+#[cfg(windows)]
 use wry::{WebViewBuilderExtWindows, WebViewExtWindows};
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
@@ -238,6 +240,10 @@ struct SharedAiBridge {
 #[serde(tag = "cmd")]
 enum UiCommand {
     RestoreSession,
+    MinimizeWindow,
+    ToggleMaximizeWindow,
+    CloseWindow,
+    DragWindow,
     NewTab { url: Option<String>, incognito: Option<bool>, workspace: Option<String>, pinned: Option<bool> },
     ReopenClosedTab,
     SwitchTab { id: usize },
@@ -508,8 +514,15 @@ fn main() -> wry::Result<()> {
     let mut win_builder = WindowBuilder::new()
         .with_title("Nova Studio — Spatial Browser 2027 🦀✨")
         .with_window_icon(window_icon)
+        .with_decorations(false)
+        .with_resizable(true)
         .with_maximized(true)
         .with_inner_size(LogicalSize::new(1460.0, 900.0));
+
+    #[cfg(windows)]
+    {
+        win_builder = win_builder.with_undecorated_shadow(true);
+    }
 
     if start_in_shadow {
         win_builder = win_builder.with_position(PhysicalPosition::new(-3000, -3000));
@@ -624,6 +637,23 @@ fn main() -> wry::Result<()> {
                 let ui_h = if zen_mode { UI_HEIGHT_ZEN } else { UI_HEIGHT_NORMAL };
 
                 match cmd {
+                    UiCommand::MinimizeWindow => {
+                        window.set_minimized(true);
+                    }
+                    UiCommand::ToggleMaximizeWindow => {
+                        let is_max = window.is_maximized();
+                        window.set_maximized(!is_max);
+                    }
+                    UiCommand::CloseWindow => {
+                        save_session_snapshot(&mut storage, &tabs, &tab_order, &current_workspace, active_tab_id, &blocked_counter, true);
+                        flush_save_sync(storage.clone());
+                        storage.save_direct();
+                        *control_flow = ControlFlow::Exit;
+                    }
+                    UiCommand::DragWindow => {
+                        let _ = window.drag_window();
+                    }
+
                     UiCommand::RestoreSession => {
                         let to_restore = storage.saved_tabs.clone();
                         println!("🔄 [Session Restore] กำลังกู้คืนแท็บเดิมจำนวน {} แท็บ...", to_restore.len());

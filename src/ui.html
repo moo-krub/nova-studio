@@ -229,13 +229,65 @@
     .top-tier {
         display: flex;
         align-items: center;
-        height: 36px;
-        padding: 0 8px;
-        gap: 8px;
+        height: 38px;
+        padding: 0 0 0 8px;
+        gap: 6px;
         background: var(--bg-base);
         border-bottom: 1px solid var(--border-subtle);
         position: relative;
         z-index: 20;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        user-select: none;
+    }
+
+    .window-drag-spacer {
+        flex: 1 1 auto;
+        min-width: 24px;
+        height: 100%;
+        cursor: default;
+    }
+
+    .window-caption-controls {
+        display: flex;
+        align-items: center;
+        height: 100%;
+        margin-left: 4px;
+        flex-shrink: 0;
+    }
+
+    .win-btn {
+        width: 46px;
+        height: 100%;
+        min-height: 38px;
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+        transition: background 0.12s ease, color 0.12s ease;
+    }
+    .win-btn svg {
+        width: 10.5px;
+        height: 10.5px;
+        display: block;
+    }
+    .win-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text-primary);
+    }
+    .win-btn.win-close:hover {
+        background: #e81123 !important;
+        color: #ffffff !important;
+    }
+    .win-btn:active {
+        background: rgba(255, 255, 255, 0.14);
+    }
+    .win-btn.win-close:active {
+        background: #bf0f1d !important;
+        color: #ffffff !important;
     }
 
     /* Brand Identity Pill */
@@ -1525,7 +1577,7 @@
     <!-- =====================================================================
          TIER 1: SPATIAL WORKSPACES & DYNAMIC TAB TRACK
          ===================================================================== -->
-    <div class="top-tier">
+    <div class="top-tier" onmousedown="handleTopTierMouseDown(event)" ondblclick="handleTopTierDblClick(event)">
         <!-- Brand Identity (Opens Command Palette) -->
         <div class="brand-logo" onclick="openCommandPalette()" title="เปิด Nova Spotlight Command Palette (Ctrl+K)">
             <svg class="brand-svg" viewBox="0 0 32 32" width="20" height="20">
@@ -1593,6 +1645,22 @@
             <button class="util-pill" onclick="send({cmd:'ToggleZenMode'})" title="โหมดไร้ขอบ (Zen Focus Mode)">
                 <svg class="nv-ic"><use href="#nv-grid"></use></svg>
                 Zen
+            </button>
+        </div>
+
+        <!-- Draggable window spacer (fills available space between tabs and controls) -->
+        <div class="window-drag-spacer"></div>
+
+        <!-- Chrome-style Integrated Window Controls -->
+        <div class="window-caption-controls">
+            <button class="win-btn win-min" onclick="send({cmd:'MinimizeWindow'})" title="ย่อหน้าต่าง (Minimize)">
+                <svg viewBox="0 0 12 12"><path d="M2 6.5h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            </button>
+            <button class="win-btn win-max" onclick="send({cmd:'ToggleMaximizeWindow'})" title="ขยายเต็มจอ / ย่อขนาด (Maximize/Restore)">
+                <svg id="maxRestoreIcon" viewBox="0 0 12 12"><rect x="2.5" y="2.5" width="7" height="7" fill="none" stroke="currentColor" stroke-width="1.2" rx="0.5"/></svg>
+            </button>
+            <button class="win-btn win-close" onclick="send({cmd:'CloseWindow'})" title="ปิดโปรแกรม (Close)">
+                <svg viewBox="0 0 12 12"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
             </button>
         </div>
     </div>
@@ -2019,7 +2087,22 @@
             }
         }
 
-        function switchWorkspaceUi(ws) {
+        
+        function handleTopTierMouseDown(e) {
+            if (e.button !== 0) return;
+            if (e.target.closest('button, input, select, textarea, .tab, .util-pill, .brand-logo, .ws-btn, .window-caption-controls')) {
+                return;
+            }
+            send({ cmd: 'DragWindow' });
+        }
+
+        function handleTopTierDblClick(e) {
+            if (e.target.closest('button, input, select, textarea, .tab, .util-pill, .brand-logo, .ws-btn, .window-caption-controls')) {
+                return;
+            }
+            send({ cmd: 'ToggleMaximizeWindow' });
+        }
+function switchWorkspaceUi(ws) {
             ['main', 'work', 'ai'].forEach(w => {
                 const el = document.getElementById('ws-' + w);
                 if (el) {

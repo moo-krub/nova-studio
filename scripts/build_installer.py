@@ -60,7 +60,17 @@ def main():
     checksum_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"✅ Checksums written to {checksum_file}")
 
-    # 5. Deploy to Desktops and Installation Directory for instant testing
+    # 5. Single Official In-Place Deployment to D:\NovaStudio
+    d_install = Path("D:/NovaStudio")
+    d_install.mkdir(parents=True, exist_ok=True)
+    target_install_exe = d_install / "Nova Studio.exe"
+    try:
+        shutil.copy2(source_exe, target_install_exe)
+        print(f"🚀 In-Place Updated: {target_install_exe}")
+    except Exception as e:
+        print(f"⚠️ Could not copy to D:/NovaStudio: {e}")
+
+    # Maintain exactly ONE clean Windows Shortcut (.lnk) on Desktops
     user_home = Path.home()
     desktop_targets = [
         user_home / "Desktop",
@@ -68,24 +78,18 @@ def main():
     ]
     for d in desktop_targets:
         if d.exists():
+            shortcut_path = d / "Nova Studio.lnk"
+            ps_cmd = f'''$WshShell = New-Object -ComObject WScript.Shell
+$Shortcut = $WshShell.CreateShortcut("{shortcut_path}")
+$Shortcut.TargetPath = "{target_install_exe}"
+$Shortcut.WorkingDirectory = "D:\\NovaStudio"
+$Shortcut.Description = "Nova Studio — Spatial Web Browser"
+$Shortcut.Save()'''
             try:
-                shutil.copy2(setup_exe, d / "Nova-Studio-Setup.exe")
-                shutil.copy2(source_exe, d / "Nova Studio.exe")
-                shutil.copy2(source_exe, d / "Nova Studio v6.0.exe")
-                shutil.copy2(source_exe, d / "Nova Studio v6.2.0.exe")
-                shutil.copy2(root / "sala.html", d / "sala.html")
-                print(f"🚀 Deployed to Desktop: {d}")
+                subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd], check=True)
+                print(f"✨ Verified single shortcut: {shortcut_path}")
             except Exception as e:
-                print(f"⚠️ Could not copy to {d}: {e}")
-
-    # Also deploy directly to D:\NovaStudio if it exists
-    d_install = Path("D:/NovaStudio")
-    if d_install.exists():
-        try:
-            shutil.copy2(source_exe, d_install / "Nova Studio.exe")
-            print(f"🚀 Deployed to Installed Path: {d_install / 'Nova Studio.exe'}")
-        except Exception as e:
-            print(f"⚠️ Could not copy to D:/NovaStudio: {e}")
+                print(f"⚠️ Could not create shortcut on {d}: {e}")
 
     print("\n🎉 Build & Packaging completed successfully!")
 

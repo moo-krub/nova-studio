@@ -1879,16 +1879,21 @@
     <!-- ============================================================
          GLOWING IN-APP AUTO-UPDATER MODAL
          ============================================================ -->
-    <div id="updateModal" class="cmd-backdrop" style="display:none" onclick="if(event.target===this) closeUpdateModal(true)">
-        <div class="cmd-card" style="width:520px;padding:24px;" role="dialog" aria-modal="true" aria-labelledby="updateTitle">
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-                <div style="width:42px;height:42px;border-radius:12px;background:rgba(52,211,153,0.16);display:grid;place-items:center;color:#34d399;">
-                    <svg class="nv-ic" style="width:22px;height:22px;"><use href="#nv-rocket"></use></svg>
+    <div id="updateModal" class="cmd-backdrop" style="display:none;align-items:center;justify-content:center;padding-top:0;" onclick="if(event.target===this) closeUpdateModal(true)">
+        <div class="cmd-card" style="width:520px;max-width:92vw;max-height:85vh;overflow-y:auto;padding:24px;" role="dialog" aria-modal="true" aria-labelledby="updateTitle">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:42px;height:42px;border-radius:12px;background:rgba(52,211,153,0.16);display:grid;place-items:center;color:#34d399;">
+                        <svg class="nv-ic" style="width:22px;height:22px;"><use href="#nv-rocket"></use></svg>
+                    </div>
+                    <div>
+                        <h2 id="updateTitle" style="margin:0;font-size:18px;font-weight:700;">อัปเดต Nova Studio</h2>
+                        <span id="updateTagBadge" style="color:var(--text-secondary);font-size:12px">ตรวจสอบเวอร์ชันล่าสุด</span>
+                    </div>
                 </div>
-                <div>
-                    <h2 id="updateTitle" style="margin:0;font-size:18px;font-weight:700;">อัปเดต Nova Studio</h2>
-                    <span id="updateTagBadge" style="color:var(--text-secondary);font-size:12px">ตรวจสอบเวอร์ชันล่าสุด</span>
-                </div>
+                <button class="nav-btn" onclick="closeUpdateModal(true)" style="width:32px;height:32px;padding:0;display:grid;place-items:center;border-radius:8px;" title="ปิดหน้าต่าง">
+                    <svg class="nv-ic" style="width:14px;height:14px;"><use href="#nv-close"></use></svg>
+                </button>
             </div>
 
             <pre id="updateNotesBox" style="display:none;max-height:160px;margin-top:14px;padding:12px;overflow:auto;white-space:pre-wrap;user-select:text;color:var(--text-secondary);background:var(--bg-omnibox);border:1px solid var(--border);border-radius:10px;font-size:12px;"></pre>
@@ -1921,7 +1926,7 @@
         // =========================================================
         // IN-APP AUTO-UPDATER ENGINE (CHROME / BRAVE / ARC STYLE)
         // =========================================================
-        const CURRENT_VERSION = 'v6.1.0';
+        const CURRENT_VERSION = window.__NOVA_CURRENT_VERSION || 'v6.2.2';
         let latestReleaseData = null;
 
         async function checkUpdateInBackground() {
@@ -1933,7 +1938,8 @@
                 if (!res.ok) return;
                 const data = await res.json();
                 const latestTag = data.tag_name || '';
-                if (latestTag && latestTag !== CURRENT_VERSION) {
+                const myVer = window.__NOVA_CURRENT_VERSION || CURRENT_VERSION;
+                if (latestTag && latestTag !== myVer) {
                     latestReleaseData = data;
                     const pill = document.getElementById('updatePill');
                     const pillLabel = document.getElementById('updatePillLabel');
@@ -1975,7 +1981,9 @@
             const modal = document.getElementById('updateModal');
             if (!modal) return;
             modal.style.display = 'none';
-            send({ cmd: 'SetUiModalOpen', open: false });
+            if ((!cmdModal || cmdModal.style.display !== 'flex') && (!toolsPopover || toolsPopover.style.display !== 'flex')) {
+                send({ cmd: 'SetUiModalOpen', open: false });
+            }
 
             if (isDismiss) {
                 sessionStorage.setItem('nova_update_dismissed', 'true');

@@ -3,12 +3,21 @@ import sys
 import shutil
 import subprocess
 import hashlib
+import re
 from pathlib import Path
+
+def get_pkg_version(cargo_toml: Path) -> str:
+    content = cargo_toml.read_text(encoding="utf-8")
+    m = re.search(r'version\s*=\s*"([^"]+)"', content)
+    return m.group(1) if m else "6.2.2"
 
 def main():
     root = Path(__file__).resolve().parent.parent
     os.chdir(root)
     print(f"📁 Working directory: {root}")
+
+    version = get_pkg_version(root / "Cargo.toml")
+    print(f"🏷️ Detected version from Cargo.toml: v{version}")
 
     # 1. Build release browser binary
     print("🔨 Step 1: Building release browser binary...")
@@ -44,7 +53,7 @@ def main():
     print(f"✅ Installer compiled & packaged: {setup_exe} ({setup_exe.stat().st_size / (1024*1024):.2f} MB)")
 
     # 3. Create Portable distribution
-    portable_exe = dist_dir / "Nova-Studio-v6.2.0-Portable.exe"
+    portable_exe = dist_dir / f"Nova-Studio-v{version}-Portable.exe"
     shutil.copy2(source_exe, portable_exe)
     print(f"✅ Portable binary saved: {portable_exe}")
 
@@ -60,13 +69,29 @@ def main():
     checksum_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"✅ Checksums written to {checksum_file}")
 
-    # 5. Single Official In-Place Deployment to D:\NovaStudio
+    # 5. Single Official In-Place Deployment to D:\NovaStudio (with atomic lock replacement)
     d_install = Path("D:/NovaStudio")
     d_install.mkdir(parents=True, exist_ok=True)
     target_install_exe = d_install / "Nova Studio.exe"
+    old_backup = d_install / "Nova Studio.exe.old"
+
+    copied = False
     try:
         shutil.copy2(source_exe, target_install_exe)
-        print(f"🚀 In-Place Updated: {target_install_exe}")
+        copied = True
+        print(f"🚀 In-Place Direct Updated: {target_install_exe}")
+    except PermissionError:
+        # File is currently executing - use Windows atomic rename fallback
+        try:
+            if old_backup.exists():
+                try: old_backup.unlink()
+                except Exception: pass
+            target_install_exe.rename(old_backup)
+            shutil.copy2(source_exe, target_install_exe)
+            copied = True
+            print(f"🚀 In-Place Hot Updated (via atomic swap): {target_install_exe}")
+        except Exception as e:
+            print(f"⚠️ Could not hot-replace running executable: {e}")
     except Exception as e:
         print(f"⚠️ Could not copy to D:/NovaStudio: {e}")
 

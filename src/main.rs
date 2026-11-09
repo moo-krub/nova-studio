@@ -537,8 +537,10 @@ fn main() -> wry::Result<()> {
     let win_size = window.inner_size().to_logical::<f64>(window.scale_factor());
 
     let proxy_ui = proxy.clone();
+    let current_version_js = format!("window.__NOVA_CURRENT_VERSION = 'v{}';", env!("CARGO_PKG_VERSION"));
     let ui_webview = WebViewBuilder::new()
         .with_additional_browser_args(extreme_gpu_flags)
+        .with_initialization_script(&current_version_js)
         .with_html(UI_HTML)
         .with_bounds(Rect {
             position: LogicalPosition::new(0.0, 0.0).into(),
@@ -1779,6 +1781,10 @@ fn sync_all_views(
         position: LogicalPosition::new(0.0, 0.0).into(),
         size: LogicalSize::new(win_width, ui_h).into(),
     });
+    let _ = ui_webview.set_visible(true);
+    if ui_modal_open {
+        let _ = ui_webview.focus();
+    }
 
     let avail_width = if panel_open && !ui_modal_open {
         let pw = PANEL_WIDTH.min(win_width * 0.45);
@@ -1786,12 +1792,14 @@ fn sync_all_views(
             position: LogicalPosition::new(win_width - pw, normal_ui_h).into(),
             size: LogicalSize::new(pw, content_height).into(),
         });
+        let _ = panel_webview.set_visible(true);
         (win_width - pw).max(0.0)
     } else {
         let _ = panel_webview.set_bounds(Rect {
             position: LogicalPosition::new(0.0, 0.0).into(),
             size: LogicalSize::new(0.0, 0.0).into(),
         });
+        let _ = panel_webview.set_visible(false);
         win_width
     };
 
@@ -1816,6 +1824,7 @@ fn sync_all_views(
                     position: LogicalPosition::new(0.0, 0.0).into(),
                     size: LogicalSize::new(0.0, 0.0).into(),
                 });
+                let _ = tab.webview.set_visible(false);
                 if id == active_id && tab.workspace == current_workspace {
                     active_url = tab.url.clone();
                     active_title = tab.title.clone();
@@ -1826,6 +1835,7 @@ fn sync_all_views(
                     position: LogicalPosition::new(0.0, normal_ui_h).into(),
                     size: LogicalSize::new(w, content_height).into(),
                 });
+                let _ = tab.webview.set_visible(true);
                 active_url = tab.url.clone();
                 active_title = tab.title.clone();
             } else if Some(id) == second_id {
@@ -1835,6 +1845,7 @@ fn sync_all_views(
                     position: LogicalPosition::new(half_w, normal_ui_h).into(),
                     size: LogicalSize::new(half_w, h).into(),
                 });
+                let _ = tab.webview.set_visible(true);
             } else if Some(id) == third_id {
                 let half_w = avail_width * 0.5;
                 let half_h = content_height * 0.5;
@@ -1842,11 +1853,13 @@ fn sync_all_views(
                     position: LogicalPosition::new(half_w, normal_ui_h + half_h).into(),
                     size: LogicalSize::new(half_w, half_h).into(),
                 });
+                let _ = tab.webview.set_visible(true);
             } else {
                 let _ = tab.webview.set_bounds(Rect {
                     position: LogicalPosition::new(0.0, 0.0).into(),
                     size: LogicalSize::new(0.0, 0.0).into(),
                 });
+                let _ = tab.webview.set_visible(false);
             }
 
             if tab.workspace == current_workspace {

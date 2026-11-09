@@ -1775,6 +1775,34 @@
   <div id="toast" class="toast"></div>
 
   <script>
+    // =========================================================================
+    // BULLETPROOF SAFE STORAGE ADAPTER
+    // Completely solves Chromium SecurityError on about:blank and opaque origins
+    // =========================================================================
+    const _inMemoryStore = {};
+    const safeStorage = {
+      getItem(key) {
+        try {
+          return window.localStorage.getItem(key);
+        } catch (e) {
+          return Object.prototype.hasOwnProperty.call(_inMemoryStore, key) ? _inMemoryStore[key] : null;
+        }
+      },
+      setItem(key, value) {
+        const strVal = String(value);
+        _inMemoryStore[key] = strVal;
+        try {
+          window.localStorage.setItem(key, strVal);
+        } catch (e) {}
+      },
+      removeItem(key) {
+        delete _inMemoryStore[key];
+        try {
+          window.localStorage.removeItem(key);
+        } catch (e) {}
+      }
+    };
+
     const THEMES = ['paper', 'meadow', 'soda', 'zine', 'night'];
 
     // IPC Sender helper
@@ -1795,12 +1823,12 @@
     };
 
     function getSearchEngine() {
-      return localStorage.getItem('nova_search_engine') || 'google';
+      return safeStorage.getItem('nova_search_engine') || 'google';
     }
 
     function setSearchEngine(se) {
       if (SEARCH_ENGINES[se]) {
-        localStorage.setItem('nova_search_engine', se);
+        safeStorage.setItem('nova_search_engine', se);
         showToast('🔍 เครื่องมือค้นหาเปลี่ยนเป็น ' + se.toUpperCase() + ' แล้ว');
       }
     }
@@ -1891,7 +1919,7 @@
       if (!THEMES.includes(theme)) theme = 'paper';
       document.documentElement.setAttribute('data-theme', theme);
       document.getElementById('themeSelect').value = theme;
-      localStorage.setItem('nova_sala_theme', theme);
+      safeStorage.setItem('nova_sala_theme', theme);
 
       // Meta theme-color for browser chrome
       const colors = {
@@ -1928,15 +1956,15 @@
       if (st) st.textContent = 'กำลังบันทึก...';
       clearTimeout(noteTimer);
       noteTimer = setTimeout(() => {
-        localStorage.setItem('nova_sticky_notes', val);
-        localStorage.setItem('nova_sala_note', val);
+        safeStorage.setItem('nova_sticky_notes', val);
+        safeStorage.setItem('nova_sala_note', val);
         send({ cmd: 'SaveNotes', notes: val });
         if (st) st.textContent = '✓ บันทึกเรียบร้อยแล้ว';
       }, 350);
     }
 
     function loadSavedNote() {
-      const note = localStorage.getItem('nova_sticky_notes') || localStorage.getItem('nova_sala_note');
+      const note = safeStorage.getItem('nova_sticky_notes') || safeStorage.getItem('nova_sala_note');
       if (note !== null && document.getElementById('stickyNote')) {
         document.getElementById('stickyNote').value = note;
       }
@@ -1969,7 +1997,7 @@
     // Daily To-Do Checklist Logic
     function getTodos() {
       try {
-        return JSON.parse(localStorage.getItem('nova_daily_todos')) || [
+        return JSON.parse(safeStorage.getItem('nova_daily_todos')) || [
           { id: '1', text: 'สำรวจฟีเจอร์ใหม่ของ Nova Studio', done: true },
           { id: '2', text: 'ทดสอบ Chrome DevTools & AI Copilot', done: false }
         ];
@@ -1979,7 +2007,7 @@
     }
 
     function saveTodos(todos) {
-      localStorage.setItem('nova_daily_todos', JSON.stringify(todos));
+      safeStorage.setItem('nova_daily_todos', JSON.stringify(todos));
       renderTodos();
     }
 
@@ -2075,7 +2103,7 @@
 
     function getShortcuts() {
       try {
-        const stored = localStorage.getItem('nova_user_shortcuts');
+        const stored = safeStorage.getItem('nova_user_shortcuts');
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -2087,7 +2115,7 @@
     }
 
     function saveShortcuts(list) {
-      localStorage.setItem('nova_user_shortcuts', JSON.stringify(list));
+      safeStorage.setItem('nova_user_shortcuts', JSON.stringify(list));
     }
 
     function extractHostname(rawUrl) {
@@ -2217,7 +2245,7 @@
     window.addEventListener('DOMContentLoaded', () => {
       renderShortcuts();
       renderTodos();
-      const savedTheme = localStorage.getItem('nova_sala_theme') || 'paper';
+      const savedTheme = safeStorage.getItem('nova_sala_theme') || 'paper';
       applyTheme(savedTheme);
       updateDateAndGreeting();
       setInterval(updateDateAndGreeting, 1000);

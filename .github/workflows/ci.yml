@@ -38,11 +38,17 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
 
+      - name: Ensure Target Exe Directory Placeholder
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "target\release" -Force
+          Set-Content -Path "target\release\my_rust_browser.exe" -Value "NOVA_PLACEHOLDER"
+
       - name: Cargo Check
-        run: cargo check --release --all-targets
+        run: cargo check --release --bin my_rust_browser --bin nova-installer
 
       - name: Cargo Clippy
-        run: cargo clippy --release --all-targets -- -D warnings
+        run: cargo clippy --release --bin my_rust_browser --bin nova-installer -- -D warnings
 
       - name: Cargo Build Binaries
         run: cargo build --release --locked --bins

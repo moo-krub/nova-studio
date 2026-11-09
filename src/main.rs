@@ -3,6 +3,7 @@ use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
+use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fs,
@@ -10,13 +11,12 @@ use std::{
     net::TcpListener,
     path::PathBuf,
     sync::{
-        atomic::{AtomicBool, AtomicUsize, Ordering},
         Arc, Condvar, Mutex,
+        atomic::{AtomicBool, AtomicUsize, Ordering},
     },
     thread,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use serde::{Deserialize, Serialize};
 use tao::{
     dpi::{LogicalPosition, LogicalSize, PhysicalPosition},
     event::{Event, WindowEvent},
@@ -26,11 +26,11 @@ use tao::{
 use wry::{Rect, WebView, WebViewBuilder};
 
 #[cfg(windows)]
+use std::os::windows::process::CommandExt;
+#[cfg(windows)]
 use tao::platform::windows::WindowBuilderExtWindows;
 #[cfg(windows)]
 use wry::{WebViewBuilderExtWindows, WebViewExtWindows};
-#[cfg(windows)]
-use std::os::windows::process::CommandExt;
 
 const UI_HEIGHT_NORMAL: f64 = 82.0;
 const UI_HEIGHT_ZEN: f64 = 42.0;
@@ -107,11 +107,26 @@ impl Default for PersistentData {
     fn default() -> Self {
         Self {
             bookmarks: vec![
-                BookmarkItem { title: "Google".into(), url: "https://www.google.com".into() },
-                BookmarkItem { title: "YouTube".into(), url: "https://www.youtube.com".into() },
-                BookmarkItem { title: "GitHub".into(), url: "https://github.com".into() },
-                BookmarkItem { title: "ChatGPT".into(), url: "https://chatgpt.com".into() },
-                BookmarkItem { title: "Rust".into(), url: "https://www.rust-lang.org".into() },
+                BookmarkItem {
+                    title: "Google".into(),
+                    url: "https://www.google.com".into(),
+                },
+                BookmarkItem {
+                    title: "YouTube".into(),
+                    url: "https://www.youtube.com".into(),
+                },
+                BookmarkItem {
+                    title: "GitHub".into(),
+                    url: "https://github.com".into(),
+                },
+                BookmarkItem {
+                    title: "ChatGPT".into(),
+                    url: "https://chatgpt.com".into(),
+                },
+                BookmarkItem {
+                    title: "Rust".into(),
+                    url: "https://www.rust-lang.org".into(),
+                },
             ],
             history: Vec::new(),
             downloads: Vec::new(),
@@ -122,13 +137,14 @@ impl Default for PersistentData {
             adblock_enabled: true,
             blocked_count: 0,
             theme: "aurora".to_string(),
-            notes: "📝 สมุดโน้ตด่วน Nova...\n- ปิดโปรแกรมเปิดใหม่ แท็บเดิมกลับมาครบ!\n- คลิกขวาที่ Bookmark เพื่อลบ".to_string(),
+            notes:
+                "📝 สมุดโน้ตด่วน Nova...\n- ปิดโปรแกรมเปิดใหม่ แท็บเดิมกลับมาครบ!\n- คลิกขวาที่ Bookmark เพื่อลบ"
+                    .to_string(),
             bookmarks_bar: false,
             tab_layout: "horizontal".to_string(),
         }
     }
 }
-
 
 // =========================================================================
 // 0. Asynchronous Debounced Storage Engine (Zero UI Stutter)
@@ -138,7 +154,8 @@ enum StorageMsg {
     Flush(PersistentData),
 }
 
-static STORAGE_TX: std::sync::OnceLock<std::sync::mpsc::Sender<StorageMsg>> = std::sync::OnceLock::new();
+static STORAGE_TX: std::sync::OnceLock<std::sync::mpsc::Sender<StorageMsg>> =
+    std::sync::OnceLock::new();
 
 fn queue_save_debounced(data: PersistentData) {
     if let Some(tx) = STORAGE_TX.get() {
@@ -244,37 +261,77 @@ enum UiCommand {
     ToggleMaximizeWindow,
     CloseWindow,
     DragWindow,
-    NewTab { url: Option<String>, incognito: Option<bool>, workspace: Option<String>, pinned: Option<bool> },
+    NewTab {
+        url: Option<String>,
+        incognito: Option<bool>,
+        workspace: Option<String>,
+        pinned: Option<bool>,
+    },
     ReopenClosedTab,
-    SwitchTab { id: usize },
-    CloseTab { id: usize },
-    TogglePinTab { id: usize },
-    ToggleTabMute { id: usize },
-    HibernateTab { id: usize },
-    SwitchWorkspace { workspace: String },
-    Navigate { url: String },
+    SwitchTab {
+        id: usize,
+    },
+    CloseTab {
+        id: usize,
+    },
+    TogglePinTab {
+        id: usize,
+    },
+    ToggleTabMute {
+        id: usize,
+    },
+    HibernateTab {
+        id: usize,
+    },
+    SwitchWorkspace {
+        workspace: String,
+    },
+    Navigate {
+        url: String,
+    },
     Back,
     Forward,
     Reload,
-    ReloadTab { id: usize },
-    Zoom { factor: f64 },
+    ReloadTab {
+        id: usize,
+    },
+    Zoom {
+        factor: f64,
+    },
     ResetZoom,
     PrintPage,
     ToggleFullscreen,
     ToggleDevTools,
     OpenCommandPalette,
-    SetUiModalOpen { open: bool },
-    StartInPlaceUpdate { download_url: String, version: String },
+    SetUiModalOpen {
+        open: bool,
+    },
+    StartInPlaceUpdate {
+        download_url: String,
+        version: String,
+    },
     RelaunchAfterUpdate,
-    InternalUpdateProgress { pct: u32, step: String, log: String },
-    InternalUpdateComplete { success: bool, message: String },
+    InternalUpdateProgress {
+        pct: u32,
+        step: String,
+        log: String,
+    },
+    InternalUpdateComplete {
+        success: bool,
+        message: String,
+    },
     CycleTilingMode,
-    MoveTabById { id: usize, before_id: Option<usize> },
+    MoveTabById {
+        id: usize,
+        before_id: Option<usize>,
+    },
     ToggleBookmarksBar,
     ToggleSidePanel,
     ToggleZenMode,
     ToggleAlwaysOnTop,
-    ToggleShadowMode { enable: bool },
+    ToggleShadowMode {
+        enable: bool,
+    },
     ToggleAdBlock,
     SetAsDefaultBrowser,
     ToggleVerticalTabs,
@@ -285,38 +342,92 @@ enum UiCommand {
     ToggleReaderMode,
     ToggleVoiceRead,
     TranslatePageToThai,
-    BoostAudio { gain: f64 },
+    BoostAudio {
+        gain: f64,
+    },
     ScrapePageData,
     SavePageOffline,
-    FindInPage { query: String },
+    FindInPage {
+        query: String,
+    },
     ClearSiteData,
     TriggerPiP,
-    SetVideoSpeed { rate: f64 },
-    SetTheme { theme: String },
-    SaveNotes { notes: String },
+    SetVideoSpeed {
+        rate: f64,
+    },
+    SetTheme {
+        theme: String,
+    },
+    SaveNotes {
+        notes: String,
+    },
     AddBookmark,
-    RemoveBookmark { index: usize },
+    RemoveBookmark {
+        index: usize,
+    },
     ClearHistory,
-    DeleteHistoryItem { index: usize },
-    OpenDownloadedFile { path: String },
+    DeleteHistoryItem {
+        index: usize,
+    },
+    OpenDownloadedFile {
+        path: String,
+    },
     OpenDownloadsFolder,
     ClearDownloads,
     // --- คำสั่ง AI Agent ---
-    EvalJs { script: String },
-    AiHighlightElements { show: bool },
-    AiClick { target: String },
-    AiType { target: String, text: String },
-    AiAutopilotGoal { goal: String },
+    EvalJs {
+        script: String,
+    },
+    AiHighlightElements {
+        show: bool,
+    },
+    AiClick {
+        target: String,
+    },
+    AiType {
+        target: String,
+        text: String,
+    },
+    AiAutopilotGoal {
+        goal: String,
+    },
     RequestPageExtract,
     // --- คำสั่งซิงค์ภายใน ---
-    InternalTitleChanged { id: usize, title: String },
-    InternalUrlChanged { id: usize, url: String, secret: Option<String> },
-    InternalPageExtracted { report: String, secret: Option<String> },
-    InternalAdBlocked { count: Option<usize>, secret: Option<String> },
-    InternalSaveOfflineHtml { title: String, html: String, secret: Option<String> },
-    InternalLoadState { id: usize, loading: bool },
-    InternalDownloadStarted { url: String, path: String },
-    InternalDownloadCompleted { url: String, path: String, success: bool },
+    InternalTitleChanged {
+        id: usize,
+        title: String,
+    },
+    InternalUrlChanged {
+        id: usize,
+        url: String,
+        secret: Option<String>,
+    },
+    InternalPageExtracted {
+        report: String,
+        secret: Option<String>,
+    },
+    InternalAdBlocked {
+        count: Option<usize>,
+        secret: Option<String>,
+    },
+    InternalSaveOfflineHtml {
+        title: String,
+        html: String,
+        secret: Option<String>,
+    },
+    InternalLoadState {
+        id: usize,
+        loading: bool,
+    },
+    InternalDownloadStarted {
+        url: String,
+        path: String,
+    },
+    InternalDownloadCompleted {
+        url: String,
+        path: String,
+        success: bool,
+    },
 }
 
 struct Tab {
@@ -344,17 +455,43 @@ fn register_default_browser() -> Result<(), String> {
     let exe_str = exe_path.to_string_lossy().to_string();
 
     let commands = [
-        format!(r#"reg add "HKCU\Software\Classes\NovaStudio.HTML" /ve /d "Nova Studio HTML Document" /f"#),
-        format!(r#"reg add "HKCU\Software\Classes\NovaStudio.HTML\DefaultIcon" /ve /d "\"{}\",0" /f"#, exe_str),
-        format!(r#"reg add "HKCU\Software\Classes\NovaStudio.HTML\shell\open\command" /ve /d "\"\"{}\"\" \"%1\"" /f"#, exe_str),
-        format!(r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio" /ve /d "Nova Studio" /f"#),
-        format!(r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\DefaultIcon" /ve /d "\"{}\",0" /f"#, exe_str),
-        format!(r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\shell\open\command" /ve /d "\"\"{}\"\"" /f"#, exe_str),
-        format!(r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\Capabilities" /v "ApplicationName" /d "Nova Studio" /f"#),
-        format!(r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\Capabilities" /v "ApplicationDescription" /d "Nova Studio — 2027 Spatial Web Browser" /f"#),
-        format!(r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\Capabilities\URLAssociations" /v "http" /d "NovaStudio.HTML" /f"#),
-        format!(r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\Capabilities\URLAssociations" /v "https" /d "NovaStudio.HTML" /f"#),
-        format!(r#"reg add "HKCU\Software\RegisteredApplications" /v "NovaStudio" /d "Software\Clients\StartMenuInternet\NovaStudio\Capabilities" /f"#),
+        format!(
+            r#"reg add "HKCU\Software\Classes\NovaStudio.HTML" /ve /d "Nova Studio HTML Document" /f"#
+        ),
+        format!(
+            r#"reg add "HKCU\Software\Classes\NovaStudio.HTML\DefaultIcon" /ve /d "\"{}\",0" /f"#,
+            exe_str
+        ),
+        format!(
+            r#"reg add "HKCU\Software\Classes\NovaStudio.HTML\shell\open\command" /ve /d "\"\"{}\"\" \"%1\"" /f"#,
+            exe_str
+        ),
+        format!(
+            r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio" /ve /d "Nova Studio" /f"#
+        ),
+        format!(
+            r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\DefaultIcon" /ve /d "\"{}\",0" /f"#,
+            exe_str
+        ),
+        format!(
+            r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\shell\open\command" /ve /d "\"\"{}\"\"" /f"#,
+            exe_str
+        ),
+        format!(
+            r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\Capabilities" /v "ApplicationName" /d "Nova Studio" /f"#
+        ),
+        format!(
+            r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\Capabilities" /v "ApplicationDescription" /d "Nova Studio — 2027 Spatial Web Browser" /f"#
+        ),
+        format!(
+            r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\Capabilities\URLAssociations" /v "http" /d "NovaStudio.HTML" /f"#
+        ),
+        format!(
+            r#"reg add "HKCU\Software\Clients\StartMenuInternet\NovaStudio\Capabilities\URLAssociations" /v "https" /d "NovaStudio.HTML" /f"#
+        ),
+        format!(
+            r#"reg add "HKCU\Software\RegisteredApplications" /v "NovaStudio" /d "Software\Clients\StartMenuInternet\NovaStudio\Capabilities" /f"#
+        ),
     ];
 
     for cmd in commands {
@@ -404,8 +541,7 @@ fn shell_ipc_allowed(body: &str) -> bool {
 #[cfg(windows)]
 fn hook_allow_all_certificates(webview: &wry::WebView) {
     use webview2_com::{
-        Microsoft::Web::WebView2::Win32::*,
-        ServerCertificateErrorDetectedEventHandler,
+        Microsoft::Web::WebView2::Win32::*, ServerCertificateErrorDetectedEventHandler,
     };
     use windows_core::Interface;
 
@@ -415,7 +551,8 @@ fn hook_allow_all_certificates(webview: &wry::WebView) {
             wv14.add_ServerCertificateErrorDetected(
                 &ServerCertificateErrorDetectedEventHandler::create(Box::new(|_, args| {
                     if let Some(args) = args {
-                        let _ = args.SetAction(COREWEBVIEW2_SERVER_CERTIFICATE_ERROR_ACTION_ALWAYS_ALLOW);
+                        let _ = args
+                            .SetAction(COREWEBVIEW2_SERVER_CERTIFICATE_ERROR_ACTION_ALWAYS_ALLOW);
                     }
                     Ok(())
                 })),
@@ -431,7 +568,13 @@ fn hook_allow_all_certificates(_webview: &wry::WebView) {}
 fn main() -> wry::Result<()> {
     if let Ok(current_exe) = std::env::current_exe() {
         if let Some(parent) = current_exe.parent() {
-            let old_file = parent.join(format!("{}.old", current_exe.file_name().unwrap_or_default().to_string_lossy()));
+            let old_file = parent.join(format!(
+                "{}.old",
+                current_exe
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+            ));
             let _ = std::fs::remove_file(old_file);
             let tmp_file = parent.join("nova_update_tmp.exe");
             let _ = std::fs::remove_file(tmp_file);
@@ -469,9 +612,24 @@ fn main() -> wry::Result<()> {
     while i < args.len() {
         match args[i].as_str() {
             "--shadow" | "--dark" => start_in_shadow = true,
-            "--url" => { if i + 1 < args.len() { initial_cli_url = Some(args[i + 1].clone()); i += 1; } }
-            "--port" => { if i + 1 < args.len() { agent_port = args[i + 1].parse().unwrap_or(9222); i += 1; } }
-            "--token" => { if i + 1 < args.len() { api_token = Some(args[i + 1].clone()); i += 1; } }
+            "--url" => {
+                if i + 1 < args.len() {
+                    initial_cli_url = Some(args[i + 1].clone());
+                    i += 1;
+                }
+            }
+            "--port" => {
+                if i + 1 < args.len() {
+                    agent_port = args[i + 1].parse().unwrap_or(9222);
+                    i += 1;
+                }
+            }
+            "--token" => {
+                if i + 1 < args.len() {
+                    api_token = Some(args[i + 1].clone());
+                    i += 1;
+                }
+            }
             _ => {}
         }
         i += 1;
@@ -480,7 +638,10 @@ fn main() -> wry::Result<()> {
     let ipc_secret = format!(
         "nova_sec_{}_{}",
         std::process::id(),
-        SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_nanos()
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos()
     );
 
     init_storage_worker();
@@ -605,10 +766,21 @@ fn main() -> wry::Result<()> {
     }
 
     let ad_domains_static = [
-        "doubleclick.net", "googlesyndication.com", "googleadservices.com",
-        "adservice.google.com", "adnxs.com", "taboola.com", "outbrain.com",
-        "popads.net", "adsterra.com", "mc.yandex.ru", "scorecardresearch.com",
-        "rubiconproject.com", "criteo.com", "pubmatic.com", "amazon-adsystem.com",
+        "doubleclick.net",
+        "googlesyndication.com",
+        "googleadservices.com",
+        "adservice.google.com",
+        "adnxs.com",
+        "taboola.com",
+        "outbrain.com",
+        "popads.net",
+        "adsterra.com",
+        "mc.yandex.ru",
+        "scorecardresearch.com",
+        "rubiconproject.com",
+        "criteo.com",
+        "pubmatic.com",
+        "amazon-adsystem.com",
     ];
     let ad_domains = Arc::new(load_adblock_rules(&ad_domains_static));
     // UA ยุคปัจจุบัน (Chrome/141 + Edg/141) — เว็บเสิร์ฟโค้ดรุ่นใหม่ ไม่ตกเป็นเบราว์เซอร์เก่า
@@ -1741,10 +1913,28 @@ fn sync_all_views(
     ai_bridge: &Arc<(Mutex<SharedAiBridge>, Condvar)>,
     blocked_counter: &Arc<AtomicUsize>,
 ) {
-    save_session_snapshot(storage, tabs, tab_order, current_workspace, active_id, blocked_counter, false);
+    save_session_snapshot(
+        storage,
+        tabs,
+        tab_order,
+        current_workspace,
+        active_id,
+        blocked_counter,
+        false,
+    );
 
-    let ui_h = if ui_modal_open { win_height } else if zen_mode { UI_HEIGHT_ZEN } else { UI_HEIGHT_NORMAL };
-    let normal_ui_h = if zen_mode { UI_HEIGHT_ZEN } else { UI_HEIGHT_NORMAL };
+    let ui_h = if ui_modal_open {
+        win_height
+    } else if zen_mode {
+        UI_HEIGHT_ZEN
+    } else {
+        UI_HEIGHT_NORMAL
+    };
+    let normal_ui_h = if zen_mode {
+        UI_HEIGHT_ZEN
+    } else {
+        UI_HEIGHT_NORMAL
+    };
     let content_height = (win_height - normal_ui_h).max(0.0);
 
     let _ = ui_webview.set_bounds(Rect {
@@ -1771,11 +1961,25 @@ fn sync_all_views(
         .iter()
         .rev()
         .copied()
-        .filter(|&id| id != active_id && tabs.get(&id).map(|t| t.workspace == current_workspace).unwrap_or(false))
+        .filter(|&id| {
+            id != active_id
+                && tabs
+                    .get(&id)
+                    .map(|t| t.workspace == current_workspace)
+                    .unwrap_or(false)
+        })
         .collect();
 
-    let second_id = if tiling_mode >= 2 { other_ws_tabs.first().copied() } else { None };
-    let third_id = if tiling_mode >= 3 { other_ws_tabs.get(1).copied() } else { None };
+    let second_id = if tiling_mode >= 2 {
+        other_ws_tabs.first().copied()
+    } else {
+        None
+    };
+    let third_id = if tiling_mode >= 3 {
+        other_ws_tabs.get(1).copied()
+    } else {
+        None
+    };
 
     let mut tab_list = Vec::new();
     let mut active_url = String::new();
@@ -1793,7 +1997,11 @@ fn sync_all_views(
                     active_title = tab.title.clone();
                 }
             } else if id == active_id && tab.workspace == current_workspace {
-                let w = if second_id.is_some() { avail_width * 0.5 } else { avail_width };
+                let w = if second_id.is_some() {
+                    avail_width * 0.5
+                } else {
+                    avail_width
+                };
                 let _ = tab.webview.set_bounds(Rect {
                     position: LogicalPosition::new(0.0, normal_ui_h).into(),
                     size: LogicalSize::new(w, content_height).into(),
@@ -1802,7 +2010,11 @@ fn sync_all_views(
                 active_title = tab.title.clone();
             } else if Some(id) == second_id {
                 let half_w = avail_width * 0.5;
-                let h = if third_id.is_some() { content_height * 0.5 } else { content_height };
+                let h = if third_id.is_some() {
+                    content_height * 0.5
+                } else {
+                    content_height
+                };
                 let _ = tab.webview.set_bounds(Rect {
                     position: LogicalPosition::new(half_w, normal_ui_h).into(),
                     size: LogicalSize::new(half_w, h).into(),
@@ -1865,7 +2077,10 @@ fn sync_all_views(
         "ramSavedMb": tabs.values().filter(|t| t.hibernated).count() * 250,
     });
 
-    let _ = ui_webview.evaluate_script(&format!("window.renderBrowserState && window.renderBrowserState({});", state));
+    let _ = ui_webview.evaluate_script(&format!(
+        "window.renderBrowserState && window.renderBrowserState({});",
+        state
+    ));
 
     if panel_open {
         let hib_count = tabs.values().filter(|t| t.hibernated).count();
@@ -1879,7 +2094,10 @@ fn sync_all_views(
             "workspace": current_workspace,
             "ramSavedMb": hib_count * 250,
         });
-        let _ = panel_webview.evaluate_script(&format!("window.renderPanelData && window.renderPanelData({});", panel_data));
+        let _ = panel_webview.evaluate_script(&format!(
+            "window.renderPanelData && window.renderPanelData({});",
+            panel_data
+        ));
     }
 }
 
@@ -1892,7 +2110,9 @@ fn request_live_dom_snapshot(
     let _ = proxy.send_event(UiCommand::RequestPageExtract);
 
     if let Ok(guard) = lock.lock() {
-        let res = cvar.wait_timeout_while(guard, Duration::from_millis(1500), |g| g.extract_seq == start_seq);
+        let res = cvar.wait_timeout_while(guard, Duration::from_millis(1500), |g| {
+            g.extract_seq == start_seq
+        });
         if let Ok((g, _)) = res {
             return g.latest_page_report.clone();
         }
@@ -1908,7 +2128,10 @@ fn start_ai_agent_server(
 ) {
     let addr = format!("127.0.0.1:{}", port);
     if let Ok(listener) = TcpListener::bind(&addr) {
-        println!("🤖 [Nova Complete AI & MCP Server] พร้อมรับคำสั่งที่ http://{} (CSRF Protected)", addr);
+        println!(
+            "🤖 [Nova Complete AI & MCP Server] พร้อมรับคำสั่งที่ http://{} (CSRF Protected)",
+            addr
+        );
         for stream in listener.incoming().flatten() {
             let mut stream = stream;
             let _ = stream.set_read_timeout(Some(Duration::from_secs(5)));
@@ -1918,7 +2141,11 @@ fn start_ai_agent_server(
                 let req_str = String::from_utf8_lossy(&buffer[..size]);
                 let mut parts = req_str.splitn(2, "\r\n\r\n");
                 let headers_raw = parts.next().unwrap_or("");
-                let body = parts.next().unwrap_or("").trim_matches(char::from(0)).trim();
+                let body = parts
+                    .next()
+                    .unwrap_or("")
+                    .trim_matches(char::from(0))
+                    .trim();
 
                 let mut has_browser_origin = false;
                 let mut provided_token: Option<String> = None;
@@ -1956,7 +2183,10 @@ fn start_ai_agent_server(
                 if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(body) {
                     if json_val.get("jsonrpc").is_some() {
                         let method = json_val["method"].as_str().unwrap_or("");
-                        let id = json_val.get("id").cloned().unwrap_or(serde_json::Value::Null);
+                        let id = json_val
+                            .get("id")
+                            .cloned()
+                            .unwrap_or(serde_json::Value::Null);
 
                         let mcp_response = match method {
                             "tools/list" => serde_json::json!({
@@ -1979,13 +2209,50 @@ fn start_ai_agent_server(
 
                                 let mut is_known_tool = true;
                                 match tool_name {
-                                    "browser_navigate" => { if let Some(u) = args["url"].as_str() { let _ = proxy.send_event(UiCommand::Navigate { url: u.to_string() }); } }
-                                    "browser_read_page" => { reply_text = request_live_dom_snapshot(&proxy, &ai_bridge); }
-                                    "browser_autopilot" => { if let Some(g) = args["goal"].as_str() { let _ = proxy.send_event(UiCommand::AiAutopilotGoal { goal: g.to_string() }); } }
-                                    "browser_click" => { if let Some(t) = args["target"].as_str() { let _ = proxy.send_event(UiCommand::AiClick { target: t.to_string() }); } }
-                                    "browser_type" => { if let (Some(t), Some(txt)) = (args["target"].as_str(), args["text"].as_str()) { let _ = proxy.send_event(UiCommand::AiType { target: t.to_string(), text: txt.to_string() }); } }
-                                    "browser_shadow_mode" => { if let Some(en) = args["enable"].as_bool() { let _ = proxy.send_event(UiCommand::ToggleShadowMode { enable: en }); } }
-                                    _ => { is_known_tool = false; }
+                                    "browser_navigate" => {
+                                        if let Some(u) = args["url"].as_str() {
+                                            let _ = proxy.send_event(UiCommand::Navigate {
+                                                url: u.to_string(),
+                                            });
+                                        }
+                                    }
+                                    "browser_read_page" => {
+                                        reply_text = request_live_dom_snapshot(&proxy, &ai_bridge);
+                                    }
+                                    "browser_autopilot" => {
+                                        if let Some(g) = args["goal"].as_str() {
+                                            let _ = proxy.send_event(UiCommand::AiAutopilotGoal {
+                                                goal: g.to_string(),
+                                            });
+                                        }
+                                    }
+                                    "browser_click" => {
+                                        if let Some(t) = args["target"].as_str() {
+                                            let _ = proxy.send_event(UiCommand::AiClick {
+                                                target: t.to_string(),
+                                            });
+                                        }
+                                    }
+                                    "browser_type" => {
+                                        if let (Some(t), Some(txt)) =
+                                            (args["target"].as_str(), args["text"].as_str())
+                                        {
+                                            let _ = proxy.send_event(UiCommand::AiType {
+                                                target: t.to_string(),
+                                                text: txt.to_string(),
+                                            });
+                                        }
+                                    }
+                                    "browser_shadow_mode" => {
+                                        if let Some(en) = args["enable"].as_bool() {
+                                            let _ = proxy.send_event(UiCommand::ToggleShadowMode {
+                                                enable: en,
+                                            });
+                                        }
+                                    }
+                                    _ => {
+                                        is_known_tool = false;
+                                    }
                                 }
                                 if is_known_tool {
                                     serde_json::json!({ "jsonrpc": "2.0", "id": id, "result": { "content": [{ "type": "text", "text": reply_text }] } })
@@ -1997,15 +2264,25 @@ fn start_ai_agent_server(
                         };
 
                         let res_str = mcp_response.to_string();
-                        let http_res = format!("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", res_str.len(), res_str);
+                        let http_res = format!(
+                            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                            res_str.len(),
+                            res_str
+                        );
                         let _ = stream.write_all(http_res.as_bytes());
                         continue;
                     }
 
                     if json_val["cmd"].as_str() == Some("RequestPageExtract") {
                         let snapshot = request_live_dom_snapshot(&proxy, &ai_bridge);
-                        let res_json = serde_json::json!({ "status": "ok", "page_report": snapshot }).to_string();
-                        let http_res = format!("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", res_json.len(), res_json);
+                        let res_json =
+                            serde_json::json!({ "status": "ok", "page_report": snapshot })
+                                .to_string();
+                        let http_res = format!(
+                            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                            res_json.len(),
+                            res_json
+                        );
                         let _ = stream.write_all(http_res.as_bytes());
                         continue;
                     }
@@ -2013,13 +2290,20 @@ fn start_ai_agent_server(
 
                 if let Ok(cmd) = serde_json::from_str::<UiCommand>(body) {
                     let _ = proxy.send_event(cmd);
-                    let res = r#"{"status":"ok","message":"Command executed in Nova Complete v5.1"}"#;
-                    let http_res = format!("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", res.len(), res);
+                    let res =
+                        r#"{"status":"ok","message":"Command executed in Nova Complete v5.1"}"#;
+                    let http_res = format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                        res.len(),
+                        res
+                    );
                     let _ = stream.write_all(http_res.as_bytes());
                     continue;
                 }
 
-                let _ = stream.write_all(b"HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+                let _ = stream.write_all(
+                    b"HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+                );
             }
         }
     }

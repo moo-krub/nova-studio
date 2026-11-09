@@ -7,10 +7,24 @@ on:
     branches: [ master, main ]
 
 jobs:
-  check-and-lint:
-    name: Cargo Check & Build
-    runs-on: windows-latest
+  lint-and-check:
+    name: Lint & Code Style Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Check Formatting (cargo fmt)
+        run: cargo fmt --all -- --check
+
+  build-windows:
+    name: Windows Check & Clippy
+    runs-on: windows-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -19,12 +33,16 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-msvc
+          components: clippy
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
 
       - name: Cargo Check
-        run: cargo check --release
+        run: cargo check --release --all-targets
 
-      - name: Cargo Build
-        run: cargo build --release
+      - name: Cargo Clippy
+        run: cargo clippy --release --all-targets -- -D warnings
+
+      - name: Cargo Build Binaries
+        run: cargo build --release --locked --bins

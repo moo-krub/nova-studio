@@ -306,8 +306,12 @@ enum UiCommand {
     AiHighlightElements { show: bool },
     AiClick { target: String },
     AiType { target: String, text: String },
+    #[serde(alias = "RunGoal")]
     AiAutopilotGoal { goal: String },
     RequestPageExtract,
+    AiSummarizePage,
+    AiTranslatePage,
+    OpenRemoteDebugging,
     // --- คำสั่งซิงค์ภายใน ---
     InternalTitleChanged { id: usize, title: String },
     InternalUrlChanged { id: usize, url: String, secret: Option<String> },
@@ -439,6 +443,7 @@ fn main() -> wry::Result<()> {
     }
 
     let extreme_gpu_flags = concat!(
+        "--remote-debugging-port=9223 ",
         "--ignore-gpu-blocklist ",
         "--ignore-certificate-errors ",
         "--test-type ",
@@ -462,7 +467,7 @@ fn main() -> wry::Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let mut start_in_shadow = false;
     let mut initial_cli_url: Option<String> = None;
-    let mut agent_port: u16 = 9222;
+    let mut agent_port: u16 = 9224;
     let mut api_token: Option<String> = std::env::var("NOVA_TOKEN").ok();
 
     let mut i = 1;
@@ -470,7 +475,7 @@ fn main() -> wry::Result<()> {
         match args[i].as_str() {
             "--shadow" | "--dark" => start_in_shadow = true,
             "--url" => { if i + 1 < args.len() { initial_cli_url = Some(args[i + 1].clone()); i += 1; } }
-            "--port" => { if i + 1 < args.len() { agent_port = args[i + 1].parse().unwrap_or(9222); i += 1; } }
+            "--port" => { if i + 1 < args.len() { agent_port = args[i + 1].parse().unwrap_or(9224); i += 1; } }
             "--token" => { if i + 1 < args.len() { api_token = Some(args[i + 1].clone()); i += 1; } }
             _ => {}
         }
@@ -801,7 +806,12 @@ fn main() -> wry::Result<()> {
                                         | UiCommand::SetAsDefaultBrowser
                                         | UiCommand::OpenDownloadsFolder
                                         | UiCommand::ClearHistory
-                                        | UiCommand::ClearDownloads => true,
+                                        | UiCommand::ClearDownloads
+                                        | UiCommand::AiSummarizePage
+                                        | UiCommand::AiTranslatePage
+                                        | UiCommand::OpenRemoteDebugging
+                                        | UiCommand::RequestPageExtract
+                                        | UiCommand::AiAutopilotGoal { .. } => true,
                                         _ => false,
                                     };
                                     if allowed {
@@ -1617,6 +1627,24 @@ fn main() -> wry::Result<()> {
                         if let Some(t) = tabs.get(&active_tab_id) {
                             let _ = t.webview.evaluate_script("window.__novaExtractDOM && window.__novaExtractDOM();");
                         }
+                    }
+                    UiCommand::AiSummarizePage => {
+                        if let Some(t) = tabs.get(&active_tab_id) {
+                            let _ = t.webview.evaluate_script("window.__novaSummarizePage && window.__novaSummarizePage();");
+                        }
+                    }
+                    UiCommand::AiTranslatePage => {
+                        if let Some(t) = tabs.get(&active_tab_id) {
+                            let _ = t.webview.evaluate_script("window.__novaTranslateToThai && window.__novaTranslateToThai();");
+                        }
+                    }
+                    UiCommand::OpenRemoteDebugging => {
+                        let _ = proxy.send_event(UiCommand::NewTab {
+                            url: Some("http://127.0.0.1:9223/json".to_string()),
+                            incognito: Some(false),
+                            workspace: None,
+                            pinned: Some(false),
+                        });
                     }
 
                     UiCommand::InternalTitleChanged { id, title } => {

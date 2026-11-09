@@ -44,7 +44,7 @@ def main():
     print(f"✅ Installer compiled & packaged: {setup_exe} ({setup_exe.stat().st_size / (1024*1024):.2f} MB)")
 
     # 3. Create Portable distribution
-    portable_exe = dist_dir / "Nova-Studio-v6.1.0-Portable.exe"
+    portable_exe = dist_dir / "Nova-Studio-v6.2.0-Portable.exe"
     shutil.copy2(source_exe, portable_exe)
     print(f"✅ Portable binary saved: {portable_exe}")
 
@@ -72,7 +72,7 @@ def main():
                 shutil.copy2(setup_exe, d / "Nova-Studio-Setup.exe")
                 shutil.copy2(source_exe, d / "Nova Studio.exe")
                 shutil.copy2(source_exe, d / "Nova Studio v6.0.exe")
-                shutil.copy2(source_exe, d / "Nova Studio v6.1.0.exe")
+                shutil.copy2(source_exe, d / "Nova Studio v6.2.0.exe")
                 shutil.copy2(root / "sala.html", d / "sala.html")
                 print(f"🚀 Deployed to Desktop: {d}")
             except Exception as e:

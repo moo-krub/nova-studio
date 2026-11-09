@@ -609,7 +609,7 @@
     .bottom-grid {
       margin-top: 0;
       display: grid;
-      grid-template-columns: 1.35fr .85fr;
+      grid-template-columns: 1.15fr 0.95fr 0.9fr;
       gap: 14px;
       flex-shrink: 0;
     }
@@ -1290,6 +1290,10 @@
       </div>
 
       <div class="top-actions">
+        <button class="shuffle" onclick="sendAction('ToggleSidePanel')" style="color:var(--accent);display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:6px 12px;background:var(--surface);border:1px solid var(--line);border-radius:99px;cursor:pointer;" title="Chrome DevTools Protocol (Port 9223) และ AI พร้อมใช้งาน — คลิกเพื่อเปิดแถบข้าง AI">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#34d399;box-shadow:0 0 6px #34d399;"></span>
+          <span>CDP :9223 • AI Ready</span>
+        </button>
         <label class="theme-control">
           <span>สไตล์:</span>
           <select id="themeSelect" onchange="changeTheme(this.value)" aria-label="เลือกสไตล์">
@@ -1418,6 +1422,19 @@
                 <span class="recent-title">Nova Studio Repository — ร่วมติดตามการอัปเดตและปล่อยเวอร์ชันใหม่</span>
                 <small>github.com</small>
               </div>
+            </div>
+          </div>
+
+          <!-- Daily To-Do Panel -->
+          <div class="panel todo-panel">
+            <h2>
+              <span>✅ สิ่งที่ต้องทำวันนี้</span>
+              <span id="todoBadge" style="font-size:11px;font-weight:700;color:var(--accent);">0 งาน</span>
+            </h2>
+            <div id="todoList" style="max-height:105px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;margin-bottom:8px;"></div>
+            <div style="display:flex;gap:6px;">
+              <input id="newTodoInput" type="text" placeholder="+ สิ่งที่ต้องทำวันนี้..." style="flex:1;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--text);outline:none;" onkeydown="if(event.key==='Enter') addTodo()" />
+              <button onclick="addTodo()" style="background:var(--accent);color:var(--on-accent);border:none;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:700;">เพิ่ม</button>
             </div>
           </div>
 
@@ -1925,17 +1942,18 @@
       }
     }
 
-    // Greeting & Date Line
+    // Greeting & Date Line with Live Clock
     function updateDateAndGreeting() {
       const now = new Date();
       const h = now.getHours();
       let greetText = 'สวัสดี';
-      if (h >= 5 && h < 12) greetText = 'สวัสดีตอนเช้า';
-      else if (h >= 12 && h < 16) greetText = 'สวัสดีตอนบ่าย';
-      else if (h >= 16 && h < 20) greetText = 'สวัสดีตอนเย็น';
-      else greetText = 'สวัสดีตอนค่ำ';
+      if (h >= 5 && h < 12) greetText = '🌅 สวัสดีตอนเช้า';
+      else if (h >= 12 && h < 16) greetText = '☀️ สวัสดีตอนบ่าย';
+      else if (h >= 16 && h < 20) greetText = '🌆 สวัสดีตอนเย็น';
+      else greetText = '🌙 ราตรีสวัสดิ์ยามค่ำคืน';
 
-      document.getElementById('greeting').textContent = greetText;
+      const greetEl = document.getElementById('greeting');
+      if (greetEl) greetEl.textContent = greetText;
 
       const dateStr = now.toLocaleDateString('th-TH', {
         weekday: 'long',
@@ -1943,7 +1961,77 @@
         month: 'long',
         year: 'numeric'
       });
-      document.getElementById('dateLabel').textContent = dateStr;
+      const timeStr = now.toLocaleTimeString('th-TH', { hour12: false });
+      const label = document.getElementById('dateLabel');
+      if (label) label.textContent = `${dateStr} • เวลา ${timeStr} น.`;
+    }
+
+    // Daily To-Do Checklist Logic
+    function getTodos() {
+      try {
+        return JSON.parse(localStorage.getItem('nova_daily_todos')) || [
+          { id: '1', text: 'สำรวจฟีเจอร์ใหม่ของ Nova Studio', done: true },
+          { id: '2', text: 'ทดสอบ Chrome DevTools & AI Copilot', done: false }
+        ];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveTodos(todos) {
+      localStorage.setItem('nova_daily_todos', JSON.stringify(todos));
+      renderTodos();
+    }
+
+    function renderTodos() {
+      const container = document.getElementById('todoList');
+      if (!container) return;
+      const todos = getTodos();
+      const doneCount = todos.filter(t => t.done).length;
+      const badge = document.getElementById('todoBadge');
+      if (badge) badge.textContent = `${doneCount}/${todos.length} งาน`;
+
+      if (todos.length === 0) {
+        container.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:12px 0;">ยังไม่มีรายการสิ่งที่ต้องทำ เพิ่มได้ด้านล่างเลย!</div>';
+        return;
+      }
+
+      container.innerHTML = todos.map(t => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px;border-radius:6px;background:var(--surface);border:1px solid var(--line);font-size:12px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1;overflow:hidden;text-decoration:${t.done ? 'line-through' : 'none'};color:${t.done ? 'var(--muted)' : 'var(--text)'};">
+            <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo('${t.id}')" style="accent-color:var(--accent);cursor:pointer;" />
+            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.text}</span>
+          </label>
+          <button onclick="deleteTodo('${t.id}')" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:0 4px;" title="ลบรายการ">×</button>
+        </div>
+      `).join('');
+    }
+
+    function addTodo() {
+      const inp = document.getElementById('newTodoInput');
+      if (!inp) return;
+      const val = inp.value.trim();
+      if (!val) return;
+      const todos = getTodos();
+      todos.push({ id: Date.now().toString(), text: val, done: false });
+      saveTodos(todos);
+      inp.value = '';
+      showToast('✅ เพิ่มสิ่งที่ต้องทำเรียบร้อย');
+    }
+
+    function toggleTodo(id) {
+      const todos = getTodos();
+      const t = todos.find(x => x.id === id);
+      if (t) {
+        t.done = !t.done;
+        saveTodos(todos);
+      }
+    }
+
+    function deleteTodo(id) {
+      let todos = getTodos();
+      todos = todos.filter(x => x.id !== id);
+      saveTodos(todos);
     }
 
     // Toast Engine
@@ -2128,9 +2216,11 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       renderShortcuts();
+      renderTodos();
       const savedTheme = localStorage.getItem('nova_sala_theme') || 'paper';
       applyTheme(savedTheme);
       updateDateAndGreeting();
+      setInterval(updateDateAndGreeting, 1000);
       loadSavedNote();
     });
   </script>

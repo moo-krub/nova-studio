@@ -691,31 +691,59 @@ button:focus-visible, input:focus-visible, textarea:focus-visible {
 
         <!-- 4. AI Copilot View -->
         <section id="sec-ai" class="panel-view">
+            <!-- CDP & Remote Debugging Protocol Status -->
+            <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.22);border-radius:10px;padding:8px 10px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399;"></span>
+                    <span style="font-size:11px;font-weight:700;color:var(--text-primary);">CDP Port 9223</span>
+                    <span style="font-size:10px;color:var(--text-muted);">| MCP: 9224</span>
+                </div>
+                <div style="display:flex;gap:4px;">
+                    <button class="secondary-btn" style="padding:2px 7px;font-size:10px;" onclick="send({ cmd: 'ToggleDevTools' })" title="เปิดหน้าต่าง DevTools (F12)">🛠️ F12</button>
+                    <button class="secondary-btn" style="padding:2px 7px;font-size:10px;" onclick="send({ cmd: 'OpenRemoteDebugging' })" title="เปิดหน้าตรวจเช็ก CDP ในแท็บใหม่">🌐 Inspect</button>
+                </div>
+            </div>
+
+            <!-- Instant AI Tools Grid -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+                <button class="secondary-btn" style="justify-content:center;padding:7px;font-size:11px;" onclick="send({ cmd: 'AiSummarizePage' })" title="สรุปหัวข้อและเนื้อหาสำคัญของหน้าเว็บ">
+                    📝 สรุปหน้าเว็บ
+                </button>
+                <button class="secondary-btn" style="justify-content:center;padding:7px;font-size:11px;" onclick="send({ cmd: 'AiTranslatePage' })" title="แปลหน้าเว็บหรือข้อความที่เลือกเป็นภาษาไทย">
+                    🌐 แปลภาษาไทย
+                </button>
+                <button class="secondary-btn" style="justify-content:center;padding:7px;font-size:11px;" onclick="send({ cmd: 'RequestPageExtract' })" title="ดึงข้อมูลโครงสร้าง DOM และรายการปุ่มบนหน้าเว็บ">
+                    📄 ดึงโครงสร้าง
+                </button>
+                <button class="secondary-btn" style="justify-content:center;padding:7px;font-size:11px;" onclick="send({ cmd: 'AiHighlightElements', show: true })" title="สแกนและเน้นปุ่มพร้อมหมายเลขสำหรับ AI">
+                    🎯 สแกนปุ่ม AI
+                </button>
+            </div>
+
+            <!-- AI Box with Autopilot -->
             <div class="ai-box">
-                <div style="display:flex;align-items:center;justify-content:space-between;">
-                    <span style="font-size:12px;font-weight:700;color:var(--accent-bright);">✨ Autonomous AI Copilot</span>
-                    <span style="font-size:10px;padding:2px 6px;border-radius:99px;background:var(--success-bg);color:var(--success);font-weight:700;">พร้อมทำงาน</span>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                    <span style="font-size:11px;font-weight:700;color:var(--accent-bright);">✨ AI Autopilot (สั่งบอททำงานแทน)</span>
+                    <span style="font-size:9px;padding:1px 5px;border-radius:99px;background:var(--success-bg);color:var(--success);font-weight:700;">พร้อมทำงาน</span>
                 </div>
                 <div class="ai-input-wrap">
-                    <textarea id="goalInput" placeholder="พิมพ์คำสั่งให้ AI ช่วยวิเคราะห์หน้าเว็บ, สรุปเนื้อหา, หรือค้นคว้าเชิงลึก..."></textarea>
+                    <textarea id="goalInput" placeholder="พิมพ์เช่น 'ค้นหาคำว่า ข่าวเทคโนโลยี' หรือ 'คลิกปุ่ม ดาวน์โหลด'..."></textarea>
                 </div>
-                <div class="ai-actions-row">
-                    <div style="display:flex;gap:4px;">
-                        <button class="secondary-btn" onclick="send({ cmd: 'RequestPageExtract' })" title="ดึงข้อมูลโครงสร้าง DOM ของหน้าปัจจุบัน">
-                            📄 ดึงข้อมูลหน้า
-                        </button>
-                    </div>
+                <div class="ai-actions-row" style="margin-top:6px;">
+                    <span style="font-size:10px;color:var(--text-muted);">บอทจะค้นหาหรือคลิกบนเว็บจริง</span>
                     <button class="primary-btn" onclick="runGoal()">
-                        <span>สั่งงาน AI</span>
+                        <span>สั่งงานบอท</span>
                         <span>→</span>
                     </button>
                 </div>
             </div>
 
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
+            <!-- Report Header with Copy -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;margin-bottom:4px;">
                 <span style="font-size:11px;font-weight:700;color:var(--text-muted);">รายงานการวิเคราะห์ (Live Report)</span>
+                <button class="secondary-btn" style="padding:2px 7px;font-size:10px;" onclick="copyAiReport()">📋 คัดลอก</button>
             </div>
-            <div id="aiReportBox" class="ai-report-view">ยังไม่มีรายงานคำสั่ง AI — พิมพ์เป้าหมายที่ต้องการด้านบนแล้วกด "สั่งงาน AI"</div>
+            <div id="aiReportBox" class="ai-report-view" style="max-height:220px;overflow-y:auto;white-space:pre-wrap;font-family:inherit;font-size:11px;line-height:1.5;">ยังไม่มีรายงานคำสั่ง AI — คลิกปุ่ม "📝 สรุปหน้าเว็บ" หรือพิมพ์สั่งงานด้านบน</div>
         </section>
 
         <!-- 5. Sticky Notes View -->
@@ -916,13 +944,24 @@ button:focus-visible, input:focus-visible, textarea:focus-visible {
             }, 350);
         }
 
+        function copyAiReport() {
+            const el = document.getElementById('aiReportBox');
+            if (!el) return;
+            const t = el.innerText || el.textContent;
+            navigator.clipboard.writeText(t).then(() => {
+                showToast('📋 คัดลอกรายงานเรียบร้อยแล้ว!');
+            }).catch(() => {
+                showToast('📋 คัดลอกเรียบร้อย');
+            });
+        }
+
         // --- AI Goal Execution ---
         function runGoal() {
             const val = document.getElementById('goalInput').value.trim();
             if (!val) return;
             const box = document.getElementById('aiReportBox');
             box.textContent = '🚀 กำลังส่งคำสั่งไปยัง Nova Complete AI Agent... กรุณารอสักครู่';
-            send({ cmd: 'RunGoal', goal: val });
+            send({ cmd: 'AiAutopilotGoal', goal: val });
         }
 
         // --- Global Bridge Functions Called from Rust ---

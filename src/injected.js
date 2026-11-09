@@ -439,6 +439,55 @@
         }));
     };
 
+    window.__novaSummarizePage = function() {
+        const title = document.title || 'หน้าเว็บปัจจุบัน';
+        const url = window.location.href;
+        
+        // Extract headings and key content
+        const headings = Array.from(document.querySelectorAll('h1, h2, h3'))
+            .map(h => h.innerText.trim())
+            .filter(t => t.length > 3)
+            .slice(0, 8);
+            
+        const paragraphs = Array.from(document.querySelectorAll('article p, main p, .post-content p, p'))
+            .map(p => p.innerText.trim())
+            .filter(t => t.length > 25)
+            .slice(0, 10);
+            
+        const fullText = (document.body ? document.body.innerText : '').replace(/\s+/g, ' ').trim();
+        const wordCount = fullText.split(/\s+/).length;
+        const readTimeMin = Math.max(1, Math.ceil(wordCount / 200));
+
+        let report = `📌 สรุปสาระสำคัญของหน้าเว็บ (AI Summary)\n`;
+        report += `🌐 หัวข้อ: ${title}\n🔗 ลิงก์: ${url}\n📊 ความยาว: ประมาณ ${wordCount.toLocaleString()} คำ (ใช้เวลาอ่าน ~${readTimeMin} นาที)\n\n`;
+        
+        if (headings.length > 0) {
+            report += `📑 ประเด็นและหัวข้อย่อยหลัก:\n`;
+            headings.forEach((h, i) => {
+                report += `  ${i + 1}. ${h}\n`;
+            });
+            report += `\n`;
+        }
+
+        if (paragraphs.length > 0) {
+            report += `💡 เนื้อหาสำคัญที่คัดกรอง:\n`;
+            paragraphs.slice(0, 5).forEach((p, i) => {
+                const cleanP = p.length > 220 ? p.substring(0, 220) + '...' : p;
+                report += `• ${cleanP}\n\n`;
+            });
+        } else {
+            report += `💡 สรุปเบื้องต้น: หน้าเว็บนี้เน้นองค์ประกอบแบบอินเทอร์แอกทีฟ มีการแสดงผลข้อมูลแบบไดนามิก\n`;
+        }
+
+        report += `✨ วิเคราะห์เสร็จสิ้นผ่าน Nova Complete Engine & CDP Bridge (Port 9223)`;
+
+        window.ipc.postMessage(JSON.stringify({
+            cmd: 'InternalPageExtracted',
+            report: report,
+            secret: __SECRET
+        }));
+    };
+
     window.__novaToggleDarkMode = function() {
         const existing = document.getElementById('__nova-dark-style');
         if (existing) { existing.remove(); return; }

@@ -28,7 +28,9 @@ const APP_VERSION: &str = "6.1.0";
 #[serde(tag = "cmd")]
 enum InstallerIpc {
     Ready,
-    BrowseFolder { current: Option<String> },
+    BrowseFolder {
+        current: Option<String>,
+    },
     StartInstall {
         installDir: String,
         desktopShortcut: bool,
@@ -36,12 +38,23 @@ enum InstallerIpc {
         setDefaultBrowser: bool,
         launchAfter: bool,
     },
-    LaunchApp { targetExe: String },
+    LaunchApp {
+        targetExe: String,
+    },
     CloseInstaller,
     // Internal thread signals
-    InternalProgress { pct: u32, step: String, log: String },
-    InternalComplete { target_exe: String, auto_launched: bool },
-    InternalFolderSelected { path: String },
+    InternalProgress {
+        pct: u32,
+        step: String,
+        log: String,
+    },
+    InternalComplete {
+        target_exe: String,
+        auto_launched: bool,
+    },
+    InternalFolderSelected {
+        path: String,
+    },
 }
 
 #[allow(non_snake_case)]

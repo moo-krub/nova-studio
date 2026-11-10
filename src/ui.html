@@ -1926,20 +1926,131 @@
         // =========================================================
         // IN-APP AUTO-UPDATER ENGINE (CHROME / BRAVE / ARC STYLE)
         // =========================================================
-        const CURRENT_VERSION = window.__NOVA_CURRENT_VERSION || 'v6.4.0';
+        const CURRENT_VERSION = window.__NOVA_CURRENT_VERSION || 'v6.4.1';
         let latestReleaseData = null;
+
+        function getCurrentVersion() {
+            return window.__NOVA_CURRENT_VERSION || CURRENT_VERSION;
+        }
+
+        function parseSemver(ver) {
+            const parts = String(ver || '').trim().replace(/^v/i, '').split('-')[0].split('.');
+            return [
+                parseInt(parts[0], 10) || 0,
+                parseInt(parts[1], 10) || 0,
+                parseInt(parts[2], 10) || 0
+            ];
+        }
+
+        function isNewerVersion(latestTag, currentTag) {
+            const l = parseSemver(latestTag);
+            const c = parseSemver(currentTag);
+            for (let i = 0; i < 3; i++) {
+                if (l[i] > c[i]) return true;
+                if (l[i] < c[i]) return false;
+            }
+            return false;
+        }
+
+        function resetUpdateModalState() {
+            const prog = document.getElementById('updateProgressContainer');
+            const pb = document.getElementById('updateProgressBar');
+            const st = document.getElementById('updateStepText');
+            const pt = document.getElementById('updatePctText');
+            const lt = document.getElementById('updateLogText');
+            const btnRelaunch = document.getElementById('btnRelaunch');
+            const btnStart = document.getElementById('btnStartUpdate');
+            const btnLater = document.getElementById('btnLaterUpdate');
+            if (prog) prog.style.display = 'none';
+            if (pb) pb.style.width = '0%';
+            if (st) st.textContent = '';
+            if (pt) pt.textContent = '';
+            if (lt) lt.textContent = '';
+            if (btnRelaunch) btnRelaunch.style.display = 'none';
+            if (btnStart) {
+                btnStart.style.display = 'none';
+                btnStart.textContent = 'ดาวน์โหลดและอัปเดต';
+            }
+            if (btnLater) {
+                btnLater.style.display = 'inline-block';
+                btnLater.textContent = 'ปิด';
+            }
+        }
+
+        function applyUpdateModalState(mode, releaseData = null, errMsg = '') {
+            const myVer = getCurrentVersion();
+            const badge = document.getElementById('updateTagBadge');
+            const nb = document.getElementById('updateNotesBox');
+            const btnStart = document.getElementById('btnStartUpdate');
+            const btnLater = document.getElementById('btnLaterUpdate');
+            const pill = document.getElementById('updatePill');
+            const pillLabel = document.getElementById('updatePillLabel');
+
+            if (mode === 'checking') {
+                if (badge) badge.textContent = `🔍 กำลังตรวจสอบเวอร์ชันล่าสุด... (เวอร์ชันปัจจุบัน: ${myVer})`;
+                if (nb) nb.style.display = 'none';
+                if (btnStart) btnStart.style.display = 'none';
+                if (btnLater) btnLater.textContent = 'ปิด';
+                return;
+            }
+
+            if (mode === 'available' && releaseData) {
+                const tag = releaseData.tag_name || '';
+                if (pill && pillLabel && tag) {
+                    pillLabel.textContent = `🚀 อัปเดต ${tag}`;
+                    pill.style.display = 'inline-flex';
+                }
+                if (badge) {
+                    badge.textContent = `เวอร์ชันใหม่: ${tag}${releaseData.name ? ' (' + releaseData.name + ')' : ''} • ปัจจุบัน: ${myVer}`;
+                }
+                if (nb) {
+                    if (releaseData.body) {
+                        nb.textContent = releaseData.body;
+                        nb.style.display = 'block';
+                    } else {
+                        nb.style.display = 'none';
+                    }
+                }
+                if (btnStart) btnStart.style.display = 'inline-block';
+                if (btnLater) btnLater.textContent = 'ภายหลัง';
+                return;
+            }
+
+            if (mode === 'up_to_date') {
+                if (pill) pill.style.display = 'none';
+                const remoteTag = releaseData && releaseData.tag_name ? ` (GitHub Latest: ${releaseData.tag_name})` : '';
+                if (badge) badge.textContent = `✅ คุณใช้งานเวอร์ชันล่าสุดอยู่แล้ว (${myVer})${remoteTag}`;
+                if (nb) nb.style.display = 'none';
+                if (btnStart) btnStart.style.display = 'none';
+                if (btnLater) btnLater.textContent = 'ปิด';
+                return;
+            }
+
+            // 'error'
+            if (badge) badge.textContent = `⚠️ ตรวจสอบอัปเดตไม่สำเร็จ (${errMsg || 'ไม่สามารถเชื่อมต่อ GitHub'}) • ปัจจุบัน: ${myVer}`;
+            if (nb) nb.style.display = 'none';
+            if (btnStart) btnStart.style.display = 'none';
+            if (btnLater) btnLater.textContent = 'ปิด';
+        }
+
+        async function fetchLatestReleaseInfo() {
+            const repo = window.__NOVA_REPO || 'moo-krub/nova-studio';
+            const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
+                cache: 'no-store',
+                headers: { 'Accept': 'application/vnd.github.v3+json' }
+            });
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}`);
+            }
+            return await res.json();
+        }
 
         async function checkUpdateInBackground() {
             try {
-                const repo = window.__NOVA_REPO || 'moo-krub/nova-studio';
-                const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
-                    headers: { 'Accept': 'application/vnd.github.v3+json' }
-                });
-                if (!res.ok) return;
-                const data = await res.json();
+                const data = await fetchLatestReleaseInfo();
                 const latestTag = data.tag_name || '';
-                const myVer = window.__NOVA_CURRENT_VERSION || CURRENT_VERSION;
-                if (latestTag && latestTag !== myVer) {
+                const myVer = getCurrentVersion();
+                if (latestTag && isNewerVersion(latestTag, myVer)) {
                     latestReleaseData = data;
                     const pill = document.getElementById('updatePill');
                     const pillLabel = document.getElementById('updatePillLabel');
@@ -1963,17 +2074,12 @@
             if (!modal) return;
             send({ cmd: 'SetUiModalOpen', open: true });
             modal.style.display = 'flex';
+            resetUpdateModalState();
 
-            if (latestReleaseData) {
-                const badge = document.getElementById('updateTagBadge');
-                if (badge) badge.textContent = `เวอร์ชันใหม่: ${latestReleaseData.tag_name} (${latestReleaseData.name || ''})`;
-                if (latestReleaseData.body) {
-                    const nb = document.getElementById('updateNotesBox');
-                    if (nb) {
-                        nb.textContent = latestReleaseData.body;
-                        nb.style.display = 'block';
-                    }
-                }
+            if (latestReleaseData && isNewerVersion(latestReleaseData.tag_name, getCurrentVersion())) {
+                applyUpdateModalState('available', latestReleaseData);
+            } else {
+                checkForUpdates(true);
             }
         }
 
@@ -1985,7 +2091,7 @@
                 send({ cmd: 'SetUiModalOpen', open: false });
             }
 
-            if (isDismiss) {
+            if (isDismiss && latestReleaseData && isNewerVersion(latestReleaseData.tag_name, getCurrentVersion())) {
                 sessionStorage.setItem('nova_update_dismissed', 'true');
                 showToast('💡 คุณสามารถกดอัปเดตได้ตลอดเวลาที่ปุ่ม "🚀 อัปเดตใหม่" ด้านขวาบน');
             }
@@ -2003,7 +2109,7 @@
             }
 
             if (!assetUrl) {
-                const tag = latestReleaseData ? latestReleaseData.tag_name : CURRENT_VERSION;
+                const tag = latestReleaseData ? latestReleaseData.tag_name : getCurrentVersion();
                 assetUrl = `https://github.com/moo-krub/nova-studio/releases/download/${tag}/Nova-Studio-${tag}-Portable.exe`;
             }
 
@@ -2058,7 +2164,29 @@
         // Trigger automatic check 3 seconds after launch
         setTimeout(checkUpdateInBackground, 3000);
 
-        function checkForUpdates(manual = true) { openUpdateModal(); }
+        async function checkForUpdates(manual = true) {
+            const modal = document.getElementById('updateModal');
+            if (!modal) return;
+            send({ cmd: 'SetUiModalOpen', open: true });
+            modal.style.display = 'flex';
+            resetUpdateModalState();
+            applyUpdateModalState('checking');
+
+            try {
+                const data = await fetchLatestReleaseInfo();
+                const latestTag = data.tag_name || '';
+                const myVer = getCurrentVersion();
+                if (latestTag && isNewerVersion(latestTag, myVer)) {
+                    latestReleaseData = data;
+                    applyUpdateModalState('available', data);
+                } else {
+                    latestReleaseData = null;
+                    applyUpdateModalState('up_to_date', data);
+                }
+            } catch (e) {
+                applyUpdateModalState('error', null, e && e.message ? e.message : 'เครือข่ายมีปัญหา');
+            }
+        }
 
         function escapeHtml(str) {
             if (!str) return '';

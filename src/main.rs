@@ -289,6 +289,7 @@ enum UiCommand {
     ToggleFullscreen,
     ToggleDevTools,
     OpenCommandPalette,
+    CheckForUpdates,
     SetUiModalOpen { open: bool },
     StartInPlaceUpdate { download_url: String, version: String },
     RelaunchAfterUpdate,
@@ -744,9 +745,10 @@ fn main() -> wry::Result<()> {
                         let tab_secret = ipc_secret.clone();
 
                         let init_script = format!(
-                            "window.__NOVA_TAB_ID = {};\nwindow.__NOVA_ADBLOCK = {};\n{}",
+                            "window.__NOVA_TAB_ID = {};\nwindow.__NOVA_ADBLOCK = {};\nwindow.__NOVA_CURRENT_VERSION = 'v{}';\n{}",
                             id,
                             adblock_active,
+                            env!("CARGO_PKG_VERSION"),
                             INJECTED_ENGINE_JS.replace("__NOVA_SECRET_PLACEHOLDER__", &tab_secret)
                         );
 
@@ -886,6 +888,7 @@ fn main() -> wry::Result<()> {
                                         | UiCommand::Zoom { .. }
                                         | UiCommand::ResetZoom
                                         | UiCommand::OpenCommandPalette
+                                        | UiCommand::CheckForUpdates
                                         | UiCommand::SetUiModalOpen { .. }
                                         | UiCommand::StartInPlaceUpdate { .. }
                                         | UiCommand::RelaunchAfterUpdate
@@ -1487,6 +1490,9 @@ fn main() -> wry::Result<()> {
                     }
                     UiCommand::OpenCommandPalette => {
                         let _ = ui_webview.evaluate_script("if (typeof openCommandPalette === 'function') openCommandPalette();");
+                    }
+                    UiCommand::CheckForUpdates => {
+                        let _ = ui_webview.evaluate_script("if (typeof checkForUpdates === 'function') checkForUpdates(true);");
                     }
                     UiCommand::SetUiModalOpen { open } => {
                         ui_modal_open = open;

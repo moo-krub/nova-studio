@@ -21,7 +21,7 @@ use wry::{Rect, WebViewBuilder};
 const INSTALLER_HTML: &str = include_str!("installer.html");
 const NOVA_BIN: &[u8] = include_bytes!("../target/release/my_rust_browser.exe");
 const ADBLOCK_RULES: &str = include_str!("../adblock_rules.txt");
-const APP_VERSION: &str = "6.1.0";
+const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[allow(non_snake_case)]
 #[derive(Debug, Serialize, Deserialize)]
@@ -129,6 +129,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         let init_data = serde_json::json!({
                             "defaultPath": default_path,
                             "drives": drives,
+                            "version": APP_VERSION,
                         });
                         let _ = webview.evaluate_script(&format!(
                             "window.initInstallerData && window.initInstallerData({});",

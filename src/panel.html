@@ -830,11 +830,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible {
             <!-- Direct IDM Turbo Download Bar -->
             <div class="turbo-box">
                 <div style="display:flex;align-items:center;justify-content:space-between;">
-                    <span style="font-size:11px;font-weight:700;color:var(--accent-bright);">⚡ Nova IDM Turbo Downloader</span>
-                    <span style="font-size:10px;color:var(--text-muted);">Multi-Segment + .m3u8</span>
+                    <span style="font-size:11px;font-weight:700;color:var(--accent-bright);">⚡ Nova IDM & Torrent Engine</span>
+                    <span style="font-size:10px;color:var(--text-muted);">HTTP/3 · .m3u8 · .mpd · Magnet</span>
                 </div>
                 <div class="turbo-row">
-                    <input id="turboUrlInput" class="turbo-input" type="text" placeholder="วางลิงก์ไฟล์ .zip / .mp4 / .m3u8..." onkeydown="if(event.key==='Enter') startTurboFromPanel()" autocomplete="off" />
+                    <input id="turboUrlInput" class="turbo-input" type="text" placeholder="วาง URL, .m3u8, .mpd, .torrent หรือ magnet:?..." onkeydown="if(event.key==='Enter') startTurboFromPanel()" autocomplete="off" />
                     <select id="turboSegments" class="turbo-select" title="จำนวนเธรดช่วยดาวน์โหลด">
                         <option value="8" selected>8x</option>
                         <option value="4">4x</option>
@@ -842,16 +842,20 @@ button:focus-visible, input:focus-visible, textarea:focus-visible {
                     </select>
                 </div>
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
-                    <span style="font-size:10px;color:var(--text-muted);">ส่งต่อ Cookie จากแท็บอัตโนมัติ</span>
-                    <button class="primary-btn" style="padding:5px 10px;font-size:11px;" onclick="startTurboFromPanel()">⚡ โหลด Turbo</button>
+                    <label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-secondary);cursor:pointer;" title="เชื่อมต่อผ่าน QUIC UDP พอร์ต 443 ก่อน (ถอยกลับอัตโนมัติถ้าถูกบล็อก)">
+                        <input id="turboHttp3Check" type="checkbox" style="margin:0;accent-color:var(--accent);" />
+                        <span>HTTP/3 (QUIC)</span>
+                    </label>
+                    <button class="primary-btn" style="padding:5px 10px;font-size:11px;" onclick="startTurboFromPanel()">⚡ โหลดเลย</button>
                 </div>
             </div>
 
             <!-- Detected Media / Streams Sniffer -->
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;gap:4px;flex-wrap:wrap;">
                 <span style="font-size:11px;font-weight:700;color:var(--text-muted);">🎬 สื่อที่ตรวจพบบนเว็บ (<span id="mediaCount">0</span>)</span>
                 <div style="display:flex;gap:4px;">
-                    <button class="secondary-btn" style="padding:3px 7px;font-size:10.5px;" onclick="send({ cmd: 'ScanPageMedia' })" title="สแกนหาวิดีโอ/ไฟล์บนหน้าเว็บปัจจุบันอีกครั้ง">🔍 สแกนหน้านี้</button>
+                    <button id="autoStreamBtn" class="secondary-btn" style="padding:3px 7px;font-size:10.5px;" onclick="send({ cmd: 'ToggleAutoDownloadStreams' })" title="โหลดรวมไฟล์สตรีม .m3u8 / .mpd ทันทีที่ตรวจพบ">⚡ อัตโนมัติ: ปิด</button>
+                    <button class="secondary-btn" style="padding:3px 7px;font-size:10.5px;" onclick="send({ cmd: 'ScanPageMedia' })" title="สแกนหาวิดีโอ/ไฟล์บนหน้าเว็บปัจจุบันอีกครั้ง">🔍 สแกน</button>
                     <button class="secondary-btn" style="padding:3px 7px;font-size:10.5px;" onclick="send({ cmd: 'ClearDetectedMedia' })">ล้าง</button>
                 </div>
             </div>
@@ -1118,15 +1122,25 @@ button:focus-visible, input:focus-visible, textarea:focus-visible {
         function startTurboFromPanel() {
             const inp = document.getElementById('turboUrlInput');
             const segEl = document.getElementById('turboSegments');
+            const h3El = document.getElementById('turboHttp3Check');
             const url = (inp?.value || '').trim();
             if (!url) {
-                showToast('⚠️ กรุณาวางลิงก์ไฟล์ก่อนกดดาวน์โหลด');
+                showToast('⚠️ กรุณาวางลิงก์ไฟล์หรือ magnet:? ก่อนกดดาวน์โหลด');
                 return;
             }
             const segments = Number(segEl?.value || 8);
-            send({ cmd: 'StartTurboDownload', url, filename: null, segments });
+            const prefer_http3 = Boolean(h3El?.checked);
+            send({ cmd: 'StartTurboDownload', url, filename: null, segments, prefer_http3 });
             inp.value = '';
-            showToast('⚡ เริ่มดาวน์โหลด Turbo ' + segments + 'x แล้ว!');
+            showToast(url.toLowerCase().startsWith('magnet:') ? '🧲 เริ่มโหลด BitTorrent แล้ว!' : ('⚡ เริ่มดาวน์โหลด ' + (prefer_http3 ? 'HTTP/3' : (segments + 'x')) + ' แล้ว!'));
+        }
+
+        function syncAutoStreamBtn(enabled) {
+            const btn = document.getElementById('autoStreamBtn');
+            if (!btn) return;
+            btn.textContent = enabled ? '⚡ อัตโนมัติ: เปิด' : '⚡ อัตโนมัติ: ปิด';
+            btn.style.color = enabled ? 'var(--success)' : '';
+            btn.style.borderColor = enabled ? 'var(--success)' : '';
         }
 
         function openDownload(idx) {
@@ -1296,6 +1310,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible {
             renderHistoryList(data.history || []);
             renderDownloadList(data.downloads || []);
             renderDetectedMediaList(data.detectedMedia || []);
+            syncAutoStreamBtn(Boolean(data.autoDownloadStreams));
 
             // Notes
             const notesArea = document.getElementById('notesArea');
@@ -1304,11 +1319,14 @@ button:focus-visible, input:focus-visible, textarea:focus-visible {
             }
         };
 
-        window.updateDownloadsLive = function(downloads, detectedMedia) {
+        window.updateDownloadsLive = function(downloads, detectedMedia, autoDownloadStreams) {
             panelState.downloads = downloads || [];
             panelState.detectedMedia = detectedMedia || [];
             renderDownloadList(panelState.downloads);
             renderDetectedMediaList(panelState.detectedMedia);
+            if (typeof autoDownloadStreams === 'boolean') {
+                syncAutoStreamBtn(autoDownloadStreams);
+            }
         };
 
         window.updateAiReport = function(report) {

@@ -34,6 +34,7 @@ pub struct TurboRequest {
     pub referer: Option<String>,
     pub cookie_header: Option<String>,
     pub segments: usize,
+    pub prefer_http3: bool,
     pub save_dir: Option<PathBuf>,
 }
 
@@ -231,6 +232,7 @@ fn attach_headers(
 struct ProbeInfo {
     total_bytes: Option<u64>,
     accept_ranges: bool,
+    alt_svc_h3: bool,
     cd_filename: Option<String>,
     content_type: String,
     final_url: String,
@@ -245,6 +247,7 @@ fn probe_target(
     let mut info = ProbeInfo {
         total_bytes: None,
         accept_ranges: false,
+        alt_svc_h3: false,
         cd_filename: None,
         content_type: String::new(),
         final_url: url.to_string(),
@@ -254,6 +257,11 @@ fn probe_target(
         let status = res.status().as_u16();
         info.final_url = res.get_uri().to_string();
         if status < 400 {
+            if let Some(alt) = res.headers().get("alt-svc").and_then(|v| v.to_str().ok()) {
+                if alt.to_ascii_lowercase().contains("h3=") {
+                    info.alt_svc_h3 = true;
+                }
+            }
             if let Some(ar) = res.headers().get("accept-ranges").and_then(|v| v.to_str().ok()) {
                 if ar.eq_ignore_ascii_case("bytes") {
                     info.accept_ranges = true;
@@ -386,7 +394,262 @@ fn is_hls_target(url: &str, content_type: &str) -> bool {
         || content_type.contains("mpegurl")
 }
 
-/// รันงานดาวน์โหลดแบบ Multi-Segment IDM / Single Stream / HLS .m3u8
+fn is_dash_target(url: &str, content_type: &str) -> bool {
+    let lower_url = url.to_ascii_lowercase();
+    let path_part = lower_url.split('?').next().unwrap_or("");
+    path_part.ends_with(".mpd")
+        || lower_url.contains(".mpd?")
+        || content_type.contains("dash+xml")
+}
+
+#[derive(Debug, PartialEq)]
+pub struct DashPlan {
+    pub init_url: Option<String>,
+    pub segments: Vec<String>,
+}
+
+/// แปลง ISO-8601 duration เช่น `PT1H2M30.5S` เป็นจำนวนวินาที
+pub fn parse_iso8601_duration(raw: &str) -> Option<f64> {
+    let s = raw.trim();
+    if !s.starts_with('P') {
+        return None;
+    }
+    let body = s.split('T').nth(1).unwrap_or("");
+    let mut secs = 0.0f64;
+    let mut num_buf = String::new();
+    for ch in body.chars() {
+        if ch.is_ascii_digit() || ch == '.' {
+            num_buf.push(ch);
+        } else {
+            let val: f64 = num_buf.parse().ok()?;
+            num_buf.clear();
+            match ch {
+                'H' | 'h' => secs += val * 3600.0,
+                'M' | 'm' => secs += val * 60.0,
+                'S' | 's' => secs += val,
+                _ => {}
+            }
+        }
+    }
+    if secs > 0.0 { Some(secs) } else { None }
+}
+
+fn format_dash_template(tpl: &str, rep_id: &str, number: u64, time_val: u64) -> String {
+    let mut out = tpl
+        .replace("$RepresentationID$", rep_id)
+        .replace("$Number$", &number.to_string())
+        .replace("$Time$", &time_val.to_string());
+
+    // รองรับรูปแบบ `$Number%04d$`
+    while let Some(start) = out.find("$Number%0") {
+        if let Some(end_rel) = out[start..].find("d$") {
+            let width_str = &out[start + 9..start + end_rel];
+            if let Ok(width) = width_str.parse::<usize>() {
+                let formatted = format!("{number:0width$}");
+                out.replace_range(start..start + end_rel + 2, &formatted);
+                continue;
+            }
+        }
+        break;
+    }
+    out
+}
+
+fn resolve_base_urls<'a>(node: roxmltree::Node<'a, 'a>, parent_base: &Url) -> Url {
+    let mut cur = parent_base.clone();
+    for child in node.children().filter(|c| c.has_tag_name("BaseURL")) {
+        if let Some(txt) = child.text() {
+            let trimmed = txt.trim();
+            if !trimmed.is_empty() {
+                if let Ok(joined) = cur.join(trimmed) {
+                    cur = joined;
+                }
+            }
+        }
+    }
+    cur
+}
+
+/// แปลงไฟล์ XML Manifest MPEG-DASH (.mpd) เพื่อดึง Initialization + Media Segments คุณภาพสูงสุด
+pub fn parse_mpd(mpd_xml: &str, mpd_url: &str) -> Result<DashPlan, String> {
+    let doc = roxmltree::Document::parse(mpd_xml)
+        .map_err(|e| format!("อ่าน XML ของ .mpd ไม่สำเร็จ: {e}"))?;
+    let mpd_node = doc.root_element();
+    if !mpd_node.has_tag_name("MPD") {
+        return Err("ไฟล์ไม่ใช่มาตรฐาน MPEG-DASH MPD".into());
+    }
+
+    let root_url = Url::parse(mpd_url).map_err(|e| format!("URL ไม่ถูกต้อง: {e}"))?;
+    let mpd_base = resolve_base_urls(mpd_node, &root_url);
+    let mpd_dur_secs = mpd_node
+        .attribute("mediaPresentationDuration")
+        .and_then(parse_iso8601_duration)
+        .unwrap_or(0.0);
+
+    let period_node = mpd_node
+        .children()
+        .find(|c| c.has_tag_name("Period"))
+        .ok_or_else(|| "ไม่พบ <Period> ในไฟล์ .mpd".to_string())?;
+    let period_base = resolve_base_urls(period_node, &mpd_base);
+
+    // ตรวจหา ContentProtection (DRM)
+    if doc.descendants().any(|n| n.has_tag_name("ContentProtection")) {
+        return Err("สตรีม .mpd นี้มีการเข้ารหัส DRM (ContentProtection)".into());
+    }
+
+    // คัด AdaptationSet วิดีโอเป็นหลัก ถ้าไม่มีจึงใช้เสียง
+    let adaptation_sets: Vec<_> = period_node
+        .children()
+        .filter(|c| c.has_tag_name("AdaptationSet"))
+        .collect();
+    if adaptation_sets.is_empty() {
+        return Err("ไม่พบ AdaptationSet ในไฟล์ .mpd".into());
+    }
+
+    let chosen_as = adaptation_sets
+        .iter()
+        .copied()
+        .find(|as_node| {
+            as_node.attribute("mimeType").is_some_and(|m| m.starts_with("video/"))
+                || as_node.attribute("contentType") == Some("video")
+                || as_node
+                    .children()
+                    .filter(|c| c.has_tag_name("Representation"))
+                    .any(|r| r.attribute("mimeType").is_some_and(|m| m.starts_with("video/")))
+        })
+        .unwrap_or(adaptation_sets[0]);
+
+    let as_base = resolve_base_urls(chosen_as, &period_base);
+    let as_template = chosen_as.children().find(|c| c.has_tag_name("SegmentTemplate"));
+    let as_seg_list = chosen_as.children().find(|c| c.has_tag_name("SegmentList"));
+
+    let chosen_rep = chosen_as
+        .children()
+        .filter(|c| c.has_tag_name("Representation"))
+        .max_by_key(|r| {
+            r.attribute("bandwidth")
+                .and_then(|b| b.parse::<u64>().ok())
+                .unwrap_or(0)
+        })
+        .ok_or_else(|| "ไม่พบ <Representation> ในไฟล์ .mpd".to_string())?;
+
+    let rep_base = resolve_base_urls(chosen_rep, &as_base);
+    let rep_id = chosen_rep.attribute("id").unwrap_or("0");
+
+    // 1) กรณีใช้ <SegmentTemplate> (นิยมสูงสุดสำหรับ MPEG-DASH)
+    let rep_tpl = chosen_rep.children().find(|c| c.has_tag_name("SegmentTemplate")).or(as_template);
+    if let Some(tpl) = rep_tpl {
+        let init_url = tpl
+            .attribute("initialization")
+            .or_else(|| as_template.and_then(|t| t.attribute("initialization")))
+            .map(|i| format_dash_template(i, rep_id, 0, 0))
+            .and_then(|u| rep_base.join(&u).ok())
+            .map(|u| u.to_string());
+
+        let media_tpl = tpl
+            .attribute("media")
+            .or_else(|| as_template.and_then(|t| t.attribute("media")))
+            .ok_or_else(|| "ไม่พบแอตทริบิวต์ media ใน SegmentTemplate".to_string())?;
+
+        let start_num: u64 = tpl
+            .attribute("startNumber")
+            .or_else(|| as_template.and_then(|t| t.attribute("startNumber")))
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(1);
+
+        let mut segments = Vec::new();
+        if let Some(timeline) = tpl
+            .children()
+            .find(|c| c.has_tag_name("SegmentTimeline"))
+            .or_else(|| as_template.and_then(|t| t.children().find(|c| c.has_tag_name("SegmentTimeline"))))
+        {
+            let mut cur_time: u64 = 0;
+            let mut cur_num: u64 = start_num;
+            for s_node in timeline.children().filter(|c| c.has_tag_name("S")) {
+                if let Some(t) = s_node.attribute("t").and_then(|v| v.parse::<u64>().ok()) {
+                    cur_time = t;
+                }
+                let d: u64 = s_node.attribute("d").and_then(|v| v.parse().ok()).unwrap_or(0);
+                let repeat: i64 = s_node.attribute("r").and_then(|v| v.parse().ok()).unwrap_or(0);
+                let count = if repeat >= 0 { (repeat + 1) as u64 } else { 1 };
+                for _ in 0..count {
+                    let resolved_rel = format_dash_template(media_tpl, rep_id, cur_num, cur_time);
+                    if let Ok(u) = rep_base.join(&resolved_rel) {
+                        segments.push(u.to_string());
+                    }
+                    cur_time = cur_time.saturating_add(d);
+                    cur_num += 1;
+                    if segments.len() >= 10_000 {
+                        break;
+                    }
+                }
+            }
+        } else {
+            let timescale: f64 = tpl
+                .attribute("timescale")
+                .or_else(|| as_template.and_then(|t| t.attribute("timescale")))
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(1.0);
+            let dur_ticks: f64 = tpl
+                .attribute("duration")
+                .or_else(|| as_template.and_then(|t| t.attribute("duration")))
+                .and_then(|v| v.parse().ok())
+                .ok_or_else(|| "ไม่พบ duration ใน SegmentTemplate".to_string())?;
+            let seg_secs = (dur_ticks / timescale.max(1.0)).max(0.1);
+            let total_segs = if mpd_dur_secs > 0.0 {
+                (mpd_dur_secs / seg_secs).ceil().max(1.0).min(10_000.0) as u64
+            } else {
+                1
+            };
+            for idx in 0..total_segs {
+                let num = start_num + idx;
+                let resolved_rel = format_dash_template(media_tpl, rep_id, num, idx * (dur_ticks as u64));
+                if let Ok(u) = rep_base.join(&resolved_rel) {
+                    segments.push(u.to_string());
+                }
+            }
+        }
+
+        if segments.is_empty() {
+            return Err("ไม่พบรายการ Segment ใน .mpd".into());
+        }
+        return Ok(DashPlan { init_url, segments });
+    }
+
+    // 2) กรณีใช้ <SegmentList>
+    let rep_list = chosen_rep.children().find(|c| c.has_tag_name("SegmentList")).or(as_seg_list);
+    if let Some(sl) = rep_list {
+        let init_url = sl
+            .children()
+            .find(|c| c.has_tag_name("Initialization"))
+            .and_then(|n| n.attribute("sourceURL"))
+            .and_then(|u| rep_base.join(u).ok())
+            .map(|u| u.to_string());
+        let segments: Vec<String> = sl
+            .children()
+            .filter(|c| c.has_tag_name("SegmentURL"))
+            .filter_map(|n| n.attribute("media"))
+            .filter_map(|u| rep_base.join(u).ok())
+            .map(|u| u.to_string())
+            .collect();
+        if segments.is_empty() {
+            return Err("SegmentList ไม่มี SegmentURL".into());
+        }
+        return Ok(DashPlan { init_url, segments });
+    }
+
+    // 3) กรณี Single-file Representation ที่มีแค่ <BaseURL>
+    if rep_base != as_base || chosen_rep.children().any(|c| c.has_tag_name("BaseURL")) {
+        return Ok(DashPlan {
+            init_url: None,
+            segments: vec![rep_base.to_string()],
+        });
+    }
+
+    Err("ไม่พบรูปแบบ Segment ที่รองรับในไฟล์ .mpd".into())
+}
+
+/// รันงานดาวน์โหลดแบบ HTTP/3 (QUIC), Multi-Segment IDM, HLS (.m3u8), MPEG-DASH (.mpd)
 pub fn run_turbo_download<F>(req: TurboRequest, cancel_flag: Arc<AtomicBool>, emit: F)
 where
     F: Fn(TurboEvent) + Send + Sync + 'static,
@@ -395,6 +658,7 @@ where
     let probe = probe_target(&agent, &req.url, &req.referer, &req.cookie_header);
     let effective_url = probe.final_url.clone();
     let is_hls = is_hls_target(&effective_url, &probe.content_type);
+    let is_dash = !is_hls && is_dash_target(&effective_url, &probe.content_type);
 
     let save_dir = req.save_dir.clone().unwrap_or_else(default_downloads_dir);
     let _ = fs::create_dir_all(&save_dir);
@@ -415,6 +679,13 @@ where
         format!("{}.ts", if trimmed.is_empty() { "stream" } else { trimmed })
     } else if is_hls && !base_name.contains('.') {
         format!("{base_name}.ts")
+    } else if is_dash && base_name.to_ascii_lowercase().ends_with(".mpd") {
+        let trimmed = base_name.strip_suffix(".mpd")
+            .or_else(|| base_name.strip_suffix(".MPD"))
+            .unwrap_or("dash_stream");
+        format!("{}.mp4", if trimmed.is_empty() { "dash_stream" } else { trimmed })
+    } else if is_dash && !base_name.contains('.') {
+        format!("{base_name}.mp4")
     } else {
         base_name
     };
@@ -429,6 +700,58 @@ where
     if is_hls {
         execute_hls_download(&agent, &req, &effective_url, &dest_path, &part_path, &final_name, &cancel_flag, &emit);
         return;
+    }
+    if is_dash {
+        execute_dash_download(&agent, &req, &effective_url, &dest_path, &part_path, &final_name, &cancel_flag, &emit);
+        return;
+    }
+
+    // ทดลองเชื่อมต่อ HTTP/3 (QUIC) ก่อนเมื่อเซิร์ฟเวอร์ประกาศ Alt-Svc: h3 หรือผู้ใช้เปิดใช้งาน HTTP/3
+    if (req.prefer_http3 || probe.alt_svc_h3) && effective_url.starts_with("https://") {
+        let h3_mode = "HTTP/3 QUIC".to_string();
+        emit(TurboEvent::Started {
+            id: req.id.clone(),
+            file_name: final_name.clone(),
+            url: req.url.clone(),
+            path: dest_path.display().to_string(),
+            total_bytes: probe.total_bytes.unwrap_or(0),
+            mode: h3_mode.clone(),
+        });
+
+        let id_c = req.id.clone();
+        let mode_c = h3_mode.clone();
+        let emit_ref = &emit;
+        let h3_res = crate::net_h3::download_via_h3(
+            &effective_url,
+            req.referer.as_deref(),
+            req.cookie_header.as_deref(),
+            &part_path,
+            &cancel_flag,
+            move |dl_bytes, total_len, pct, speed| {
+                emit_ref(TurboEvent::Progress {
+                    id: id_c.clone(),
+                    downloaded_bytes: dl_bytes,
+                    total_bytes: total_len,
+                    pct,
+                    speed_bps: speed,
+                    mode: mode_c.clone(),
+                });
+            },
+        );
+        match h3_res {
+            Ok(_) => {
+                finalize_part_file(&req.id, &final_name, &dest_path, &part_path, Ok(()), &cancel_flag, &emit);
+                return;
+            }
+            Err(_) if !cancel_flag.load(Ordering::Relaxed) => {
+                // ถอยกลับไปใช้ HTTP/1.1 Turbo อัตโนมัติหากเครือข่ายบล็อก UDP/443
+                let _ = fs::remove_file(&part_path);
+            }
+            Err(err) => {
+                finalize_part_file(&req.id, &final_name, &dest_path, &part_path, Err(err), &cancel_flag, &emit);
+                return;
+            }
+        }
     }
 
     let total_bytes = probe.total_bytes.unwrap_or(0);
@@ -843,6 +1166,20 @@ where
     Ok(())
 }
 
+fn fetch_manifest_text(agent: &ureq::Agent, req: &TurboRequest, url: &str) -> Result<String, String> {
+    let mut r = attach_headers(agent.get(url), &req.referer, &req.cookie_header)
+        .call()
+        .map_err(|e| format!("ดึงเพลย์ลิสต์สตรีมไม่สำเร็จ: {e}"))?;
+    if r.status().as_u16() >= 400 {
+        return Err(format!("เพลย์ลิสต์ตอบกลับ HTTP {}", r.status().as_u16()));
+    }
+    r.body_mut()
+        .with_config()
+        .limit(10 * 1024 * 1024)
+        .read_to_string()
+        .map_err(|e| format!("อ่านเพลย์ลิสต์ไม่สำเร็จ: {e}"))
+}
+
 #[allow(clippy::too_many_arguments)]
 fn execute_hls_download<F>(
     agent: &ureq::Agent,
@@ -856,23 +1193,9 @@ fn execute_hls_download<F>(
 ) where
     F: Fn(TurboEvent) + Send + Sync,
 {
-    let fetch_text = |u: &str| -> Result<String, String> {
-        let mut r = attach_headers(agent.get(u), &req.referer, &req.cookie_header)
-            .call()
-            .map_err(|e| format!("ดึงเพลย์ลิสต์ HLS ไม่สำเร็จ: {e}"))?;
-        if r.status().as_u16() >= 400 {
-            return Err(format!("HLS Playlist ตอบกลับ HTTP {}", r.status().as_u16()));
-        }
-        r.body_mut()
-            .with_config()
-            .limit(10 * 1024 * 1024)
-            .read_to_string()
-            .map_err(|e| format!("อ่านเพลย์ลิสต์ไม่สำเร็จ: {e}"))
-    };
-
     let mut current_url = playlist_url.to_string();
     let (init_url, segments) = loop {
-        match fetch_text(&current_url).and_then(|txt| parse_m3u8(&txt, &current_url)) {
+        match fetch_manifest_text(agent, req, &current_url).and_then(|txt| parse_m3u8(&txt, &current_url)) {
             Ok(M3u8Kind::Master { best_variant_url }) => {
                 if best_variant_url == current_url {
                     emit(TurboEvent::Finished {
@@ -901,21 +1224,77 @@ fn execute_hls_download<F>(
     };
 
     let mode_label = format!("HLS ({} segs)", segments.len());
+    execute_segment_pipeline(agent, req, dest_path, part_path, final_name, init_url, &segments, &mode_label, cancel_flag, emit);
+}
+
+#[allow(clippy::too_many_arguments)]
+fn execute_dash_download<F>(
+    agent: &ureq::Agent,
+    req: &TurboRequest,
+    mpd_url: &str,
+    dest_path: &Path,
+    part_path: &Path,
+    final_name: &str,
+    cancel_flag: &Arc<AtomicBool>,
+    emit: &F,
+) where
+    F: Fn(TurboEvent) + Send + Sync,
+{
+    let plan = match fetch_manifest_text(agent, req, mpd_url).and_then(|xml| parse_mpd(&xml, mpd_url)) {
+        Ok(p) => p,
+        Err(msg) => {
+            emit(TurboEvent::Finished {
+                id: req.id.clone(),
+                success: false,
+                file_name: final_name.to_string(),
+                path: dest_path.display().to_string(),
+                message: msg,
+            });
+            return;
+        }
+    };
+
+    let mode_label = format!("DASH ({} segs)", plan.segments.len());
+    execute_segment_pipeline(
+        agent,
+        req,
+        dest_path,
+        part_path,
+        final_name,
+        plan.init_url,
+        &plan.segments,
+        &mode_label,
+        cancel_flag,
+        emit,
+    );
+}
+
+/// ดาวน์โหลดและรวมชิ้นส่วนสื่อ (Initialization + Segments) แบบโหลดขนานทีละ 4 ชุดเรียงลำดับถูกต้อง (ใช้ร่วมกันทั้ง HLS และ MPEG-DASH)
+#[allow(clippy::too_many_arguments)]
+fn execute_segment_pipeline<F>(
+    agent: &ureq::Agent,
+    req: &TurboRequest,
+    dest_path: &Path,
+    part_path: &Path,
+    final_name: &str,
+    init_url: Option<String>,
+    segments: &[String],
+    mode_label: &str,
+    cancel_flag: &Arc<AtomicBool>,
+    emit: &F,
+) where
+    F: Fn(TurboEvent) + Send + Sync,
+{
     emit(TurboEvent::Started {
         id: req.id.clone(),
         file_name: final_name.to_string(),
         url: req.url.clone(),
         path: dest_path.display().to_string(),
         total_bytes: 0,
-        mode: mode_label.clone(),
+        mode: mode_label.to_string(),
     });
 
-    let file_res = OpenOptions::new()
-        .create(true)
-        .write(true)
-        .truncate(true)
-        .open(part_path);
-    let file = match file_res {
+    let file = match OpenOptions::new().create(true).write(true).truncate(true).open(part_path) {
         Ok(f) => f,
         Err(e) => {
             emit(TurboEvent::Finished {
@@ -965,7 +1344,6 @@ fn execute_hls_download<F>(
         }
     }
 
-    // โหลดทีละชุดละ 4 segment พร้อมกันแล้วเขียนเรียงลำดับอย่างถูกต้อง
     let total_segs = segments.len();
     let mut completed_segs = 0usize;
     let mut outcome: Result<(), String> = Ok(());
@@ -982,7 +1360,7 @@ fn execute_hls_download<F>(
                 .collect();
             handles
                 .into_iter()
-                .map(|h| h.join().unwrap_or_else(|_| Err("HLS worker panicked".into())))
+                .map(|h| h.join().unwrap_or_else(|_| Err("Stream worker panicked".into())))
                 .collect()
         });
 
@@ -1015,7 +1393,7 @@ fn execute_hls_download<F>(
             total_bytes: 0,
             pct,
             speed_bps: speed,
-            mode: mode_label.clone(),
+            mode: mode_label.to_string(),
         });
     }
 
@@ -1163,6 +1541,7 @@ mod tests {
                 referer: None,
                 cookie_header: None,
                 segments: 4,
+                prefer_http3: false,
                 save_dir: Some(out_dir.clone()),
             },
             cancel,
@@ -1183,5 +1562,38 @@ mod tests {
         assert!(evs.iter().any(|e| matches!(e, TurboEvent::Finished { success: true, .. })));
 
         let _ = fs::remove_dir_all(&out_dir);
+    }
+
+    #[test]
+    fn mpd_dash_parses_highest_bandwidth_template_and_timeline() {
+        assert_eq!(parse_iso8601_duration("PT1M30.5S"), Some(90.5));
+        let mpd = r#"<?xml version="1.0"?>
+        <MPD xmlns="urn:mpeg:dash:schema:mpd:2011" mediaPresentationDuration="PT12S">
+          <Period>
+            <AdaptationSet mimeType="video/mp4">
+              <Representation id="360p" bandwidth="500000">
+                <SegmentTemplate initialization="$RepresentationID$/init.mp4" media="$RepresentationID$/seg-$Number%04d$.m4s" startNumber="1" duration="4" timescale="1"/>
+              </Representation>
+              <Representation id="1080p" bandwidth="4500000">
+                <SegmentTemplate initialization="$RepresentationID$/init.mp4" media="$RepresentationID$/seg-$Number%04d$.m4s" startNumber="1">
+                  <SegmentTimeline>
+                    <S t="0" d="4" r="1"/>
+                    <S d="4"/>
+                  </SegmentTimeline>
+                </SegmentTemplate>
+              </Representation>
+            </AdaptationSet>
+          </Period>
+        </MPD>"#;
+        let plan = parse_mpd(mpd, "https://cdn.example.com/dash/stream.mpd").unwrap();
+        assert_eq!(plan.init_url.as_deref(), Some("https://cdn.example.com/dash/1080p/init.mp4"));
+        assert_eq!(
+            plan.segments,
+            vec![
+                "https://cdn.example.com/dash/1080p/seg-0001.m4s",
+                "https://cdn.example.com/dash/1080p/seg-0002.m4s",
+                "https://cdn.example.com/dash/1080p/seg-0003.m4s",
+            ]
+        );
     }
 }

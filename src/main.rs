@@ -4,9 +4,11 @@ use mimalloc::MiMalloc;
 static GLOBAL: MiMalloc = MiMalloc;
 
 mod downloader;
+mod net_h3;
+mod torrent;
 
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs,
     io::{Read, Write},
     net::TcpListener,
@@ -115,6 +117,8 @@ struct PersistentData {
     notes: String,
     #[serde(default)]
     bookmarks_bar: bool,
+    #[serde(default)]
+    auto_download_streams: bool,
     #[serde(default = "default_tab_layout")]
     tab_layout: String,
 }
@@ -144,6 +148,7 @@ impl Default for PersistentData {
             theme: "aurora".to_string(),
             notes: "📝 สมุดโน้ตด่วน Nova...\n- ปิดโปรแกรมเปิดใหม่ แท็บเดิมกลับมาครบ!\n- คลิกขวาที่ Bookmark เพื่อลบ".to_string(),
             bookmarks_bar: false,
+            auto_download_streams: false,
             tab_layout: "horizontal".to_string(),
         }
     }
@@ -323,10 +328,11 @@ enum UiCommand {
     ShowInFolder { path: String },
     OpenDownloadsFolder,
     ClearDownloads,
-    StartTurboDownload { url: String, filename: Option<String>, segments: Option<usize> },
+    StartTurboDownload { url: String, filename: Option<String>, segments: Option<usize>, prefer_http3: Option<bool> },
     CancelDownload { id: String },
     ClearDetectedMedia,
     ScanPageMedia,
+    ToggleAutoDownloadStreams,
     // --- คำสั่ง AI Agent ---
     EvalJs { script: String },
     AiHighlightElements { show: bool },
@@ -623,6 +629,13 @@ fn main() -> wry::Result<()> {
     let mut ui_modal_open = false;
     let mut download_cancels: HashMap<String, Arc<AtomicBool>> = HashMap::new();
     let mut next_dl_seq: u64 = 1;
+    let mut auto_queued_streams: HashSet<String> = HashSet::new();
+    let mut contexts: HashMap<String, wry::WebContext> = HashMap::new();
+    let sandbox_incog_dir = std::env::temp_dir().join(format!("nova_sandbox_incog_{}", std::process::id()));
+    let profiles_root = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|d| d.join("nova_profiles")))
+        .unwrap_or_else(|| PathBuf::from("nova_profiles"));
 
     // กู้คืนแท็บเดิมทั้งหมดตอนเปิดโปรแกรม
     if !storage.saved_tabs.is_empty() {
@@ -670,6 +683,7 @@ fn main() -> wry::Result<()> {
                 save_session_snapshot(&mut storage, &tabs, &tab_order, &current_workspace, active_tab_id, &blocked_counter, true);
                 flush_save_sync(storage.clone());
                 storage.save_direct();
+                let _ = fs::remove_dir_all(&sandbox_incog_dir);
                 *control_flow = ControlFlow::Exit;
             }
             Event::UserEvent(cmd) => {
@@ -737,7 +751,27 @@ fn main() -> wry::Result<()> {
                         );
 
                         let expected_secret = ipc_secret.clone();
-                        let mut builder = WebViewBuilder::new()
+                        let proxy_nav = proxy.clone();
+                        let ctx_key = if is_incognito {
+                            "incognito".to_string()
+                        } else if tab_ws == "work" || tab_ws == "ai" {
+                            tab_ws.clone()
+                        } else {
+                            "main".to_string()
+                        };
+                        let web_ctx = contexts.entry(ctx_key.clone()).or_insert_with(|| {
+                            if ctx_key == "incognito" {
+                                let _ = fs::create_dir_all(&sandbox_incog_dir);
+                                wry::WebContext::new(Some(sandbox_incog_dir.clone()))
+                            } else if ctx_key == "main" {
+                                wry::WebContext::new(None)
+                            } else {
+                                let dir = profiles_root.join(&ctx_key);
+                                let _ = fs::create_dir_all(&dir);
+                                wry::WebContext::new(Some(dir))
+                            }
+                        });
+                        let mut builder = WebViewBuilder::new_with_web_context(web_ctx)
                             .with_user_agent(stealth_ua)
                             .with_incognito(is_incognito)
                             .with_devtools(true)
@@ -747,6 +781,15 @@ fn main() -> wry::Result<()> {
                                 let _ = proxy_title.send_event(UiCommand::InternalTitleChanged { id, title: new_title });
                             })
                             .with_navigation_handler(move |nav_url| {
+                                if torrent::is_torrent_or_magnet(&nav_url) && nav_url.trim_start().to_ascii_lowercase().starts_with("magnet:") {
+                                    let _ = proxy_nav.send_event(UiCommand::StartTurboDownload {
+                                        url: nav_url,
+                                        filename: None,
+                                        segments: Some(8),
+                                        prefer_http3: None,
+                                    });
+                                    return false;
+                                }
                                 if adblock_flag.load(Ordering::Relaxed) {
                                     for ad in ad_domains_ref.iter() {
                                         let ad_str: &str = ad;
@@ -763,6 +806,15 @@ fn main() -> wry::Result<()> {
                             // (ไม่ปล่อยหน้าต่างกำพร้านอกการควบคุม — ส่งต่อให้ proxy เปิดแท็บแล้วปฏิเสธ popup)
                             .with_new_window_req_handler(move |nw_url: String, _features: wry::NewWindowFeatures| {
                                 let lower = nw_url.to_lowercase();
+                                if lower.trim_start().starts_with("magnet:") {
+                                    let _ = proxy_nw.send_event(UiCommand::StartTurboDownload {
+                                        url: nw_url,
+                                        filename: None,
+                                        segments: Some(8),
+                                        prefer_http3: None,
+                                    });
+                                    return wry::NewWindowResponse::Deny;
+                                }
                                 let is_auth_or_popup = lower.contains("accounts.google.com")
                                     || lower.contains("oauth")
                                     || lower.contains("signin")
@@ -959,26 +1011,31 @@ fn main() -> wry::Result<()> {
                         let safe = toast.replace('\\', "\\\\").replace('"', "\\\"");
                         let _ = ui_webview.evaluate_script(&format!("window.showToast && window.showToast(\"{}\");", safe));
                     }
-                    UiCommand::StartTurboDownload { url, filename, segments } => {
+                    UiCommand::StartTurboDownload { url, filename, segments, prefer_http3 } => {
                         let clean_url = url.trim().to_string();
-                        if clean_url.starts_with("http://") || clean_url.starts_with("https://") {
+                        let is_magnet_or_torrent = torrent::is_torrent_or_magnet(&clean_url);
+                        let is_http = clean_url.starts_with("http://") || clean_url.starts_with("https://");
+                        if is_magnet_or_torrent || is_http {
                             let dl_id = format!("tb_{}", next_dl_seq);
                             next_dl_seq += 1;
                             let segs = segments.unwrap_or(8).clamp(1, 16);
+                            let use_h3 = prefer_http3.unwrap_or(false);
 
                             let mut referer: Option<String> = None;
                             let mut cookie_header: Option<String> = None;
-                            if let Some(tab) = tabs.get(&active_tab_id) {
-                                if !tab.url.is_empty() && !tab.url.starts_with("about:") {
-                                    referer = Some(tab.url.clone());
-                                }
-                                if let Ok(cookies) = tab.webview.cookies_for_url(&clean_url) {
-                                    let joined: Vec<String> = cookies
-                                        .iter()
-                                        .map(|c| format!("{}={}", c.name(), c.value()))
-                                        .collect();
-                                    if !joined.is_empty() {
-                                        cookie_header = Some(joined.join("; "));
+                            if is_http {
+                                if let Some(tab) = tabs.get(&active_tab_id) {
+                                    if !tab.url.is_empty() && !tab.url.starts_with("about:") {
+                                        referer = Some(tab.url.clone());
+                                    }
+                                    if let Ok(cookies) = tab.webview.cookies_for_url(&clean_url) {
+                                        let joined: Vec<String> = cookies
+                                            .iter()
+                                            .map(|c| format!("{}={}", c.name(), c.value()))
+                                            .collect();
+                                        if !joined.is_empty() {
+                                            cookie_header = Some(joined.join("; "));
+                                        }
                                     }
                                 }
                             }
@@ -987,8 +1044,16 @@ fn main() -> wry::Result<()> {
                             let pre_name = filename
                                 .clone()
                                 .filter(|s| !s.trim().is_empty())
+                                .or_else(|| torrent::extract_magnet_display_name(&clean_url))
                                 .or_else(|| downloader::extract_filename_from_url(&clean_url))
                                 .unwrap_or_else(|| "เตรียมดาวน์โหลด...".into());
+                            let init_mode = if is_magnet_or_torrent {
+                                "BitTorrent P2P".to_string()
+                            } else if use_h3 {
+                                "HTTP/3 QUIC".to_string()
+                            } else {
+                                format!("{}x Turbo", segs)
+                            };
                             storage.downloads.insert(0, DownloadItem {
                                 id: dl_id.clone(),
                                 file_name: pre_name,
@@ -1000,8 +1065,8 @@ fn main() -> wry::Result<()> {
                                 total_bytes: 0,
                                 pct: 0,
                                 speed_bps: 0,
-                                mode: format!("{}x Turbo", segs),
-                                message: "กำลังเชื่อมต่อเซิร์ฟเวอร์...".into(),
+                                mode: init_mode,
+                                message: "กำลังเชื่อมต่อ...".into(),
                             });
 
                             let cancel_flag = Arc::new(AtomicBool::new(false));
@@ -1015,33 +1080,42 @@ fn main() -> wry::Result<()> {
                             let _ = panel_webview.evaluate_script("window.switchSection && window.switchSection('dl');");
 
                             let proxy_tb = proxy.clone();
-                            thread::spawn(move || {
-                                downloader::run_turbo_download(
-                                    downloader::TurboRequest {
-                                        id: dl_id,
-                                        url: clean_url,
-                                        suggested_filename: filename.filter(|s| !s.trim().is_empty()),
-                                        referer,
-                                        cookie_header,
-                                        segments: segs,
-                                        save_dir: None,
-                                    },
-                                    cancel_flag,
-                                    move |ev| match ev {
-                                        downloader::TurboEvent::Started { id, file_name, url, path, total_bytes, mode } => {
-                                            let _ = proxy_tb.send_event(UiCommand::InternalTurboStarted { id, file_name, url, path, total_bytes, mode });
-                                        }
-                                        downloader::TurboEvent::Progress { id, downloaded_bytes, total_bytes, pct, speed_bps, mode } => {
-                                            let _ = proxy_tb.send_event(UiCommand::InternalTurboProgress { id, downloaded_bytes, total_bytes, pct, speed_bps, mode });
-                                        }
-                                        downloader::TurboEvent::Finished { id, success, file_name, path, message } => {
-                                            let _ = proxy_tb.send_event(UiCommand::InternalTurboFinished { id, success, file_name, path, message });
-                                        }
-                                    },
-                                );
-                            });
+                            let forward_event = move |ev: downloader::TurboEvent| match ev {
+                                downloader::TurboEvent::Started { id, file_name, url, path, total_bytes, mode } => {
+                                    let _ = proxy_tb.send_event(UiCommand::InternalTurboStarted { id, file_name, url, path, total_bytes, mode });
+                                }
+                                downloader::TurboEvent::Progress { id, downloaded_bytes, total_bytes, pct, speed_bps, mode } => {
+                                    let _ = proxy_tb.send_event(UiCommand::InternalTurboProgress { id, downloaded_bytes, total_bytes, pct, speed_bps, mode });
+                                }
+                                downloader::TurboEvent::Finished { id, success, file_name, path, message } => {
+                                    let _ = proxy_tb.send_event(UiCommand::InternalTurboFinished { id, success, file_name, path, message });
+                                }
+                            };
+
+                            if is_magnet_or_torrent {
+                                thread::spawn(move || {
+                                    torrent::run_torrent_download(dl_id, clean_url, None, cancel_flag, forward_event);
+                                });
+                            } else {
+                                thread::spawn(move || {
+                                    downloader::run_turbo_download(
+                                        downloader::TurboRequest {
+                                            id: dl_id,
+                                            url: clean_url,
+                                            suggested_filename: filename.filter(|s| !s.trim().is_empty()),
+                                            referer,
+                                            cookie_header,
+                                            segments: segs,
+                                            prefer_http3: use_h3,
+                                            save_dir: None,
+                                        },
+                                        cancel_flag,
+                                        forward_event,
+                                    );
+                                });
+                            }
                         } else {
-                            let _ = ui_webview.evaluate_script("window.showToast && window.showToast('❌ กรุณากรอก URL ที่ขึ้นต้นด้วย http:// หรือ https://');");
+                            let _ = ui_webview.evaluate_script("window.showToast && window.showToast('❌ กรุณากรอก URL (http/https) หรือ magnet:? ลิงก์');");
                         }
                     }
                     UiCommand::CancelDownload { id } => {
@@ -1053,18 +1127,23 @@ fn main() -> wry::Result<()> {
                             item.speed_bps = 0;
                             item.message = "ยกเลิกแล้ว".to_string();
                         }
-                        push_downloads_to_panel(&panel_webview, &storage.downloads, &ai_bridge);
+                        push_downloads_to_panel(&panel_webview, &storage, &ai_bridge);
                     }
                     UiCommand::ClearDetectedMedia => {
                         if let Ok(mut guard) = ai_bridge.0.lock() {
                             guard.detected_media.clear();
                         }
-                        push_downloads_to_panel(&panel_webview, &storage.downloads, &ai_bridge);
+                        push_downloads_to_panel(&panel_webview, &storage, &ai_bridge);
                     }
                     UiCommand::ScanPageMedia => {
                         if let Some(t) = tabs.get(&active_tab_id) {
                             let _ = t.webview.evaluate_script("window.__novaScanMedia && window.__novaScanMedia();");
                         }
+                    }
+                    UiCommand::ToggleAutoDownloadStreams => {
+                        storage.auto_download_streams = !storage.auto_download_streams;
+                        storage.save();
+                        push_downloads_to_panel(&panel_webview, &storage, &ai_bridge);
                     }
                     UiCommand::InternalTurboStarted { id, file_name, url, path, total_bytes, mode } => {
                         if let Some(item) = storage.downloads.iter_mut().find(|d| d.id == id) {
@@ -1075,7 +1154,7 @@ fn main() -> wry::Result<()> {
                             item.mode = mode;
                             item.message = "กำลังดาวน์โหลด...".into();
                         }
-                        push_downloads_to_panel(&panel_webview, &storage.downloads, &ai_bridge);
+                        push_downloads_to_panel(&panel_webview, &storage, &ai_bridge);
                     }
                     UiCommand::InternalTurboProgress { id, downloaded_bytes, total_bytes, pct, speed_bps, mode } => {
                         if let Some(item) = storage.downloads.iter_mut().find(|d| d.id == id) {
@@ -1088,7 +1167,7 @@ fn main() -> wry::Result<()> {
                             item.mode = mode;
                         }
                         if side_panel_open {
-                            push_downloads_to_panel(&panel_webview, &storage.downloads, &ai_bridge);
+                            push_downloads_to_panel(&panel_webview, &storage, &ai_bridge);
                         }
                     }
                     UiCommand::InternalTurboFinished { id, success, file_name, path, message } => {
@@ -1945,12 +2024,14 @@ fn main() -> wry::Result<()> {
                         let _ = ui_webview.evaluate_script(&format!("window.updateBlockedCount && window.updateBlockedCount({});", total));
                     }
                     UiCommand::InternalMediaDetected { id, url, media_type, title, page_url, .. } => {
+                        let mut is_new = false;
                         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs();
                         if let Ok(mut guard) = ai_bridge.0.lock() {
                             if !guard.detected_media.iter().any(|m| m.url == url) {
+                                is_new = true;
                                 guard.detected_media.insert(0, DetectedMediaItem {
-                                    url,
-                                    media_type,
+                                    url: url.clone(),
+                                    media_type: media_type.clone(),
                                     title,
                                     page_url,
                                     tab_id: id,
@@ -1961,8 +2042,19 @@ fn main() -> wry::Result<()> {
                                 }
                             }
                         }
-                        if side_panel_open {
-                            push_downloads_to_panel(&panel_webview, &storage.downloads, &ai_bridge);
+                        if is_new
+                            && storage.auto_download_streams
+                            && (media_type == "HLS" || media_type == "DASH")
+                            && auto_queued_streams.insert(url.clone())
+                        {
+                            let _ = proxy.send_event(UiCommand::StartTurboDownload {
+                                url,
+                                filename: None,
+                                segments: Some(8),
+                                prefer_http3: None,
+                            });
+                        } else if side_panel_open {
+                            push_downloads_to_panel(&panel_webview, &storage, &ai_bridge);
                         }
                     }
                 }
@@ -2176,6 +2268,7 @@ fn sync_all_views(
             "history": storage.history,
             "downloads": storage.downloads,
             "detectedMedia": detected_media,
+            "autoDownloadStreams": storage.auto_download_streams,
             "notes": storage.notes,
             "bookmarks": storage.bookmarks,
             "tabs": tab_list,
@@ -2189,7 +2282,7 @@ fn sync_all_views(
 
 fn push_downloads_to_panel(
     panel_webview: &WebView,
-    downloads: &[DownloadItem],
+    storage: &PersistentData,
     ai_bridge: &Arc<(Mutex<SharedAiBridge>, Condvar)>,
 ) {
     let detected_media = ai_bridge
@@ -2197,11 +2290,11 @@ fn push_downloads_to_panel(
         .lock()
         .map(|g| g.detected_media.clone())
         .unwrap_or_default();
-    let dl_json = serde_json::to_string(downloads).unwrap_or_else(|_| "[]".to_string());
+    let dl_json = serde_json::to_string(&storage.downloads).unwrap_or_else(|_| "[]".to_string());
     let media_json = serde_json::to_string(&detected_media).unwrap_or_else(|_| "[]".to_string());
     let _ = panel_webview.evaluate_script(&format!(
-        "window.updateDownloadsLive && window.updateDownloadsLive({}, {});",
-        dl_json, media_json
+        "window.updateDownloadsLive && window.updateDownloadsLive({}, {}, {});",
+        dl_json, media_json, storage.auto_download_streams
     ));
 }
 
@@ -2291,8 +2384,8 @@ fn start_ai_agent_server(
                                         { "name": "browser_click", "description": "คลิกปุ่มด้วยหมายเลข ID หรือ CSS Selector", "inputSchema": { "type": "object", "properties": { "target": {"type": "string"} } } },
                                         { "name": "browser_type", "description": "พิมพ์ข้อความลงในช่อง Input ด้วยหมายเลข ID หรือ CSS Selector", "inputSchema": { "type": "object", "properties": { "target": {"type": "string"}, "text": {"type": "string"} } } },
                                         { "name": "browser_shadow_mode", "description": "ส่งเบราว์เซอร์เข้ามิติมืด (-3000,-3000) หรือดึงกลับ", "inputSchema": { "type": "object", "properties": { "enable": {"type": "boolean"} } } },
-                                        { "name": "browser_turbo_download", "description": "ดาวน์โหลดไฟล์หรือสตรีม .m3u8 แบบ Multi-Segment (IDM Turbo) พร้อมส่งต่อ Cookie จากแท็บปัจจุบัน", "inputSchema": { "type": "object", "properties": { "url": {"type": "string"}, "filename": {"type": "string"}, "segments": {"type": "integer"} }, "required": ["url"] } },
-                                        { "name": "browser_list_media", "description": "ดึงรายการไฟล์สื่อ/วิดีโอ/.m3u8 ที่ตรวจพบล่าสุดในเบราว์เซอร์", "inputSchema": { "type": "object", "properties": {} } }
+                                        { "name": "browser_turbo_download", "description": "ดาวน์โหลดไฟล์, สตรีม .m3u8/.mpd, หรือ BitTorrent / magnet:? ผ่าน HTTP/3 (QUIC) หรือ Multi-Segment พร้อมส่งต่อ Cookie จากแท็บปัจจุบัน", "inputSchema": { "type": "object", "properties": { "url": {"type": "string"}, "filename": {"type": "string"}, "segments": {"type": "integer"}, "prefer_http3": {"type": "boolean"} }, "required": ["url"] } },
+                                        { "name": "browser_list_media", "description": "ดึงรายการไฟล์สื่อ/วิดีโอ/.m3u8/.mpd ที่ตรวจพบล่าสุดในเบราว์เซอร์", "inputSchema": { "type": "object", "properties": {} } }
                                     ]
                                 }
                             }),
@@ -2313,7 +2406,8 @@ fn start_ai_agent_server(
                                         if let Some(u) = args["url"].as_str() {
                                             let fname = args["filename"].as_str().map(str::to_string);
                                             let segs = args["segments"].as_u64().map(|n| n as usize);
-                                            let _ = proxy.send_event(UiCommand::StartTurboDownload { url: u.to_string(), filename: fname, segments: segs });
+                                            let h3 = args["prefer_http3"].as_bool();
+                                            let _ = proxy.send_event(UiCommand::StartTurboDownload { url: u.to_string(), filename: fname, segments: segs, prefer_http3: h3 });
                                             reply_text = format!("⚡ เริ่มดาวน์โหลด Turbo แล้ว: {}", u);
                                         }
                                     }

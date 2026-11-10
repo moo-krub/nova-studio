@@ -22,15 +22,66 @@
         return AD_PATTERNS.some(p => lower.includes(p));
     }
 
-    function reportBlockedAd(count) {
+    function postInternal(cmd, payload) {
         try {
-            window.ipc.postMessage(JSON.stringify({
-                cmd: 'InternalAdBlocked',
-                count: count || 1,
-                secret: __SECRET
-            }));
+            window.ipc.postMessage(JSON.stringify(Object.assign({ cmd, secret: __SECRET }, payload)));
         } catch (e) {}
     }
+
+    function reportBlockedAd(count) {
+        postInternal('InternalAdBlocked', { count: count || 1 });
+    }
+
+    // --- 🎬 Media & Stream Sniffer (IDM-style: .m3u8 / .mp4 / .mp3 / archives) ---
+    const __detectedMediaSet = new Set();
+    function classifyMediaUrl(rawUrl) {
+        if (!rawUrl || typeof rawUrl !== 'string') return null;
+        if (!/^https?:\/\//i.test(rawUrl) || isAdUrl(rawUrl)) return null;
+        const clean = rawUrl.split('#')[0];
+        const pathOnly = clean.split('?')[0].toLowerCase();
+        if (pathOnly.endsWith('.m3u8') || clean.toLowerCase().includes('.m3u8?')) return 'HLS';
+        if (pathOnly.endsWith('.mpd') || clean.toLowerCase().includes('.mpd?')) return 'DASH';
+        if (/\.(mp4|webm|mkv|mov|m4v)$/.test(pathOnly)) return 'VIDEO';
+        if (/\.(mp3|m4a|aac|flac|ogg|wav)$/.test(pathOnly)) return 'AUDIO';
+        if (/\.(zip|rar|7z|pdf|exe|msi|iso)$/.test(pathOnly)) return 'FILE';
+        return null;
+    }
+
+    function reportDetectedMedia(rawUrl, explicitType) {
+        try {
+            const absUrl = new URL(rawUrl, window.location.href).href;
+            const kind = explicitType || classifyMediaUrl(absUrl);
+            if (!kind || __detectedMediaSet.has(absUrl) || __detectedMediaSet.size >= 40) return;
+            __detectedMediaSet.add(absUrl);
+            postInternal('InternalMediaDetected', {
+                id: window.__NOVA_TAB_ID || 1,
+                url: absUrl,
+                media_type: kind,
+                title: document.title || 'Media Stream',
+                page_url: window.location.href
+            });
+        } catch (e) {}
+    }
+
+    window.__novaScanMedia = function() {
+        let count = 0;
+        document.querySelectorAll('video, audio, source').forEach(el => {
+            const src = el.currentSrc || el.src || el.getAttribute('src');
+            if (src && /^https?:\/\//i.test(src)) {
+                const kind = el.tagName === 'AUDIO' ? 'AUDIO' : (classifyMediaUrl(src) || 'VIDEO');
+                reportDetectedMedia(src, kind);
+                count++;
+            }
+        });
+        document.querySelectorAll('a[href]').forEach(a => {
+            const kind = classifyMediaUrl(a.href);
+            if (kind === 'VIDEO' || kind === 'AUDIO' || kind === 'FILE' || kind === 'HLS') {
+                reportDetectedMedia(a.href, kind);
+                count++;
+            }
+        });
+        return count;
+    };
 
     const origFetch = window.fetch;
     window.fetch = function(input, init) {
@@ -39,6 +90,8 @@
             reportBlockedAd(1);
             return Promise.reject(new Error('Blocked by Nova Deep AdGuard'));
         }
+        const mediaKind = classifyMediaUrl(url);
+        if (mediaKind) reportDetectedMedia(url, mediaKind);
         return origFetch.apply(this, arguments);
     };
 
@@ -47,6 +100,9 @@
         if (isAdUrl(url)) {
             this.__novaBlocked = true;
             reportBlockedAd(1);
+        } else {
+            const mediaKind = classifyMediaUrl(url);
+            if (mediaKind) reportDetectedMedia(url, mediaKind);
         }
         return origOpen.apply(this, arguments);
     };
@@ -160,12 +216,11 @@
     window.addEventListener('DOMContentLoaded', () => {
         purgeDomAds();
         if (window.location.href !== 'about:blank') {
-            window.ipc.postMessage(JSON.stringify({
-                cmd: 'InternalUrlChanged',
+            postInternal('InternalUrlChanged', {
                 id: window.__NOVA_TAB_ID || 1,
-                url: window.location.href,
-                secret: __SECRET
-            }));
+                url: window.location.href
+            });
+            setTimeout(() => { window.__novaScanMedia && window.__novaScanMedia(); }, 700);
         }
     });
 
@@ -523,8 +578,12 @@
         window.__novaSetMute(!window.__novaIsMuted);
     };
     document.addEventListener('play', function(e) {
-        if (window.__novaIsMuted && e.target && (e.target.tagName === 'AUDIO' || e.target.tagName === 'VIDEO')) {
-            e.target.muted = true;
+        if (e.target && (e.target.tagName === 'AUDIO' || e.target.tagName === 'VIDEO')) {
+            if (window.__novaIsMuted) e.target.muted = true;
+            const src = e.target.currentSrc || e.target.src;
+            if (src && /^https?:\/\//i.test(src)) {
+                reportDetectedMedia(src, e.target.tagName === 'AUDIO' ? 'AUDIO' : 'VIDEO');
+            }
         }
     }, true);
 

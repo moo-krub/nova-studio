@@ -1,6 +1,6 @@
 [package]
 name = "my_rust_browser"
-version = "6.2.2"
+version = "6.3.0"
 edition = "2024"
 authors = ["Nova Studio Team <core@nova-studio.dev>"]
 description = "Nova Studio — Hyper-Performance 2027 Spatial Web Browser Engineered in Rust with Tao, Wry, and WebView2"
@@ -24,6 +24,8 @@ serde_json = "1.0.154"
 tao = "0.37.2"
 wry = { version = "0.57.1", features = ["devtools"] }
 mimalloc = { version = "0.1", default-features = false }
+ureq = { version = "3.4.2", default-features = false, features = ["native-tls-no-default", "gzip"] }
+url = "2.5.8"
 
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.39.1"

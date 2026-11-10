@@ -591,6 +591,158 @@ button:focus-visible, input:focus-visible, textarea:focus-visible {
     color: var(--text-muted);
     opacity: 0.5;
 }
+
+/* Nova IDM Turbo Downloader & Media Sniffer */
+.turbo-box {
+    background: linear-gradient(145deg, rgba(99, 102, 241, 0.10), rgba(34, 211, 238, 0.05));
+    border: 1px solid rgba(99, 102, 241, 0.28);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.turbo-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.turbo-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    background: var(--bg-base);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-sm);
+    padding: 6px 8px;
+    font-size: 11.5px;
+    color: var(--text-primary);
+    outline: none;
+}
+
+.turbo-input:focus {
+    border-color: var(--accent-bright);
+}
+
+.turbo-select {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-sm);
+    padding: 5px 6px;
+    font-size: 11px;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.dl-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 9px 10px;
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-soft);
+    transition: border-color .15s ease;
+}
+
+.dl-card:hover {
+    border-color: var(--border-medium);
+}
+
+.dl-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.dl-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    word-break: break-all;
+    cursor: pointer;
+}
+
+.dl-name:hover {
+    color: var(--accent-bright);
+    text-decoration: underline;
+}
+
+.dl-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    font-size: 10px;
+}
+
+.dl-tag {
+    padding: 1px 6px;
+    border-radius: var(--radius-pill);
+    font-weight: 700;
+    font-size: 10px;
+    background: var(--accent-subtle);
+    color: var(--accent-bright);
+}
+
+.dl-tag.ok { background: var(--success-bg); color: var(--success); }
+.dl-tag.err { background: rgba(251, 113, 133, 0.14); color: var(--danger); }
+.dl-tag.warn { background: rgba(251, 191, 36, 0.14); color: var(--warning); }
+
+.dl-bar-track {
+    width: 100%;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+}
+
+.dl-bar-fill {
+    height: 100%;
+    background: var(--gradient-brand);
+    transition: width 0.18s linear;
+}
+
+.dl-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: 10.5px;
+    color: var(--text-muted);
+}
+
+.dl-btns {
+    display: flex;
+    gap: 4px;
+}
+
+.panel-toast {
+    position: fixed;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    background: rgba(21, 22, 30, 0.96);
+    border: 1px solid var(--accent-bright);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    font-size: 11.5px;
+    text-align: center;
+    z-index: 9999;
+    box-shadow: var(--shadow-accent);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px);
+    transition: all .2s var(--ease-out);
+}
+
+.panel-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
 </style>
 </head>
 <body>
@@ -673,10 +825,41 @@ button:focus-visible, input:focus-visible, textarea:focus-visible {
             <div id="histList" class="card-list"></div>
         </section>
 
-        <!-- 3. Downloads View -->
+        <!-- 3. Downloads & IDM Turbo Engine View -->
         <section id="sec-dl" class="panel-view">
-            <div style="display:flex;align-items:center;justify-content:space-between;">
-                <span style="font-size:11px;font-weight:700;color:var(--text-muted);">ไฟล์ที่ดาวน์โหลด</span>
+            <!-- Direct IDM Turbo Download Bar -->
+            <div class="turbo-box">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span style="font-size:11px;font-weight:700;color:var(--accent-bright);">⚡ Nova IDM Turbo Downloader</span>
+                    <span style="font-size:10px;color:var(--text-muted);">Multi-Segment + .m3u8</span>
+                </div>
+                <div class="turbo-row">
+                    <input id="turboUrlInput" class="turbo-input" type="text" placeholder="วางลิงก์ไฟล์ .zip / .mp4 / .m3u8..." onkeydown="if(event.key==='Enter') startTurboFromPanel()" autocomplete="off" />
+                    <select id="turboSegments" class="turbo-select" title="จำนวนเธรดช่วยดาวน์โหลด">
+                        <option value="8" selected>8x</option>
+                        <option value="4">4x</option>
+                        <option value="16">16x</option>
+                    </select>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                    <span style="font-size:10px;color:var(--text-muted);">ส่งต่อ Cookie จากแท็บอัตโนมัติ</span>
+                    <button class="primary-btn" style="padding:5px 10px;font-size:11px;" onclick="startTurboFromPanel()">⚡ โหลด Turbo</button>
+                </div>
+            </div>
+
+            <!-- Detected Media / Streams Sniffer -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
+                <span style="font-size:11px;font-weight:700;color:var(--text-muted);">🎬 สื่อที่ตรวจพบบนเว็บ (<span id="mediaCount">0</span>)</span>
+                <div style="display:flex;gap:4px;">
+                    <button class="secondary-btn" style="padding:3px 7px;font-size:10.5px;" onclick="send({ cmd: 'ScanPageMedia' })" title="สแกนหาวิดีโอ/ไฟล์บนหน้าเว็บปัจจุบันอีกครั้ง">🔍 สแกนหน้านี้</button>
+                    <button class="secondary-btn" style="padding:3px 7px;font-size:10.5px;" onclick="send({ cmd: 'ClearDetectedMedia' })">ล้าง</button>
+                </div>
+            </div>
+            <div id="mediaList" class="card-list"></div>
+
+            <!-- Active & Completed Downloads -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
+                <span style="font-size:11px;font-weight:700;color:var(--text-muted);">💾 รายการดาวน์โหลด</span>
                 <div style="display:flex;gap:6px;">
                     <button class="secondary-btn" onclick="send({ cmd: 'OpenDownloadsFolder' })" title="เปิดโฟลเดอร์ดาวน์โหลดของเครื่อง">
                         📁 โฟลเดอร์
@@ -905,6 +1088,110 @@ button:focus-visible, input:focus-visible, textarea:focus-visible {
             renderHistoryList(panelState.history || []);
         }
 
+        let toastTimer = null;
+        function showToast(msg) {
+            let el = document.getElementById('panelToast');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'panelToast';
+                el.className = 'panel-toast';
+                document.body.appendChild(el);
+            }
+            el.textContent = msg;
+            el.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+        }
+
+        function formatBytes(bytes) {
+            if (!bytes || bytes <= 0) return '0 B';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let i = 0;
+            let v = Number(bytes);
+            while (v >= 1024 && i < units.length - 1) {
+                v /= 1024;
+                i++;
+            }
+            return v.toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+        }
+
+        function startTurboFromPanel() {
+            const inp = document.getElementById('turboUrlInput');
+            const segEl = document.getElementById('turboSegments');
+            const url = (inp?.value || '').trim();
+            if (!url) {
+                showToast('⚠️ กรุณาวางลิงก์ไฟล์ก่อนกดดาวน์โหลด');
+                return;
+            }
+            const segments = Number(segEl?.value || 8);
+            send({ cmd: 'StartTurboDownload', url, filename: null, segments });
+            inp.value = '';
+            showToast('⚡ เริ่มดาวน์โหลด Turbo ' + segments + 'x แล้ว!');
+        }
+
+        function openDownload(idx) {
+            const dl = (panelState.downloads || [])[idx];
+            if (dl && dl.path) send({ cmd: 'OpenDownloadedFile', path: dl.path });
+        }
+
+        function showInFolder(idx) {
+            const dl = (panelState.downloads || [])[idx];
+            if (dl && dl.path) send({ cmd: 'ShowInFolder', path: dl.path });
+        }
+
+        function copyDownloadUrl(idx) {
+            const dl = (panelState.downloads || [])[idx];
+            if (dl && dl.url) {
+                navigator.clipboard?.writeText(dl.url).then(() => showToast('📋 คัดลอกลิงก์แล้ว'));
+            }
+        }
+
+        function cancelDownload(idx) {
+            const dl = (panelState.downloads || [])[idx];
+            if (dl && dl.id) send({ cmd: 'CancelDownload', id: dl.id });
+        }
+
+        function downloadDetectedMedia(idx) {
+            const m = (panelState.detectedMedia || [])[idx];
+            if (!m || !m.url) return;
+            const segments = Number(document.getElementById('turboSegments')?.value || 8);
+            send({ cmd: 'StartTurboDownload', url: m.url, filename: null, segments });
+            showToast('⚡ กำลังดึงสตรีม ' + (m.media_type || 'MEDIA') + '...');
+        }
+
+        function copyMediaUrl(idx) {
+            const m = (panelState.detectedMedia || [])[idx];
+            if (m && m.url) {
+                navigator.clipboard?.writeText(m.url).then(() => showToast('📋 คัดลอกลิงก์สื่อแล้ว'));
+            }
+        }
+
+        function renderDetectedMediaList(items) {
+            const container = document.getElementById('mediaList');
+            const countEl = document.getElementById('mediaCount');
+            if (!container) return;
+            if (countEl) countEl.textContent = items.length;
+
+            if (items.length === 0) {
+                container.innerHTML = `<div style="font-size:11px;color:var(--text-muted);padding:6px 4px;">ยังไม่พบวิดีโอหรือสตรีม (.mp4 / .m3u8) — เปิดเล่นวิดีโอหรือกด "🔍 สแกนหน้านี้"</div>`;
+                return;
+            }
+
+            container.innerHTML = items.slice(0, 15).map((m, idx) => `
+                <div class="dl-card">
+                    <div class="dl-top">
+                        <span class="dl-name" style="cursor:default;text-decoration:none;">${escapeHtml(m.title || 'Media')}</span>
+                        <span class="dl-tag">${escapeHtml(m.media_type || 'MEDIA')}</span>
+                    </div>
+                    <span class="item-meta" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(m.url)}</span>
+                    <div class="dl-btns">
+                        <button class="primary-btn" style="padding:3px 9px;font-size:10.5px;" onclick="downloadDetectedMedia(${idx})">⚡ โหลดเลย</button>
+                        <button class="secondary-btn" style="padding:3px 7px;font-size:10.5px;" onclick="copyMediaUrl(${idx})">📋 คัดลอก</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
         // --- Render Downloads ---
         function renderDownloadList(items) {
             const container = document.getElementById('dlList');
@@ -913,22 +1200,51 @@ button:focus-visible, input:focus-visible, textarea:focus-visible {
 
             if (items.length === 0) {
                 container.innerHTML = `
-                    <div class="empty-state">
+                    <div class="empty-state" style="padding:22px 10px;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                         <div>ยังไม่มีประวัติการดาวน์โหลดไฟล์</div>
                     </div>`;
                 return;
             }
 
-            container.innerHTML = items.slice().reverse().map(dl => `
-                <div class="item-card" onclick="send({ cmd: 'OpenDownloadedFile', path: '${escapeHtml(dl.path)}' })">
-                    <div class="item-icon">💾</div>
-                    <div class="item-info">
-                        <span class="item-title">${escapeHtml(dl.filename || dl.path)}</span>
-                        <span class="item-meta">${escapeHtml(dl.url)} · ${formatTime(dl.timestamp)}</span>
-                    </div>
-                </div>
-            `).join('');
+            container.innerHTML = items.map((dl, idx) => {
+                const name = dl.file_name || dl.path || dl.url || 'download';
+                const status = dl.status || 'completed';
+                const isRunning = status === 'downloading';
+                const statusBadge = status === 'completed'
+                    ? '<span class="dl-tag ok">เสร็จสิ้น</span>'
+                    : isRunning
+                    ? `<span class="dl-tag warn">กำลังโหลด ${dl.pct ? dl.pct + '%' : ''}</span>`
+                    : `<span class="dl-tag err">${status === 'cancelled' ? 'ยกเลิก' : 'ล้มเหลว'}</span>`;
+                const modeBadge = dl.mode ? `<span class="dl-tag">${escapeHtml(dl.mode)}</span>` : '';
+                const speedStr = isRunning && dl.speed_bps ? formatBytes(dl.speed_bps) + '/s' : '';
+                const sizeStr = dl.total_bytes > 0
+                    ? `${formatBytes(dl.downloaded_bytes)} / ${formatBytes(dl.total_bytes)}`
+                    : (dl.downloaded_bytes > 0 ? formatBytes(dl.downloaded_bytes) : formatTime(dl.timestamp));
+
+                return `
+                    <div class="dl-card">
+                        <div class="dl-top">
+                            <span class="dl-name" onclick="openDownload(${idx})" title="คลิกเพื่อเปิดไฟล์">${escapeHtml(name)}</span>
+                            <div class="dl-badges">${modeBadge}${statusBadge}</div>
+                        </div>
+                        ${isRunning ? `
+                            <div class="dl-bar-track">
+                                <div class="dl-bar-fill" style="width:${dl.pct > 0 ? dl.pct : 15}%;"></div>
+                            </div>
+                        ` : ''}
+                        <div class="dl-footer">
+                            <span>${escapeHtml(sizeStr)}${speedStr ? ' · ⚡ ' + speedStr : ''}${!isRunning && dl.message ? ' · ' + escapeHtml(dl.message) : ''}</span>
+                            <div class="dl-btns">
+                                ${isRunning
+                                    ? `<button class="secondary-btn" style="padding:2px 7px;font-size:10px;color:var(--danger);" onclick="cancelDownload(${idx})">✕ ยกเลิก</button>`
+                                    : `<button class="secondary-btn" style="padding:2px 7px;font-size:10px;" onclick="showInFolder(${idx})" title="แสดงไฟล์ในโฟลเดอร์">📂</button>
+                                       <button class="secondary-btn" style="padding:2px 7px;font-size:10px;" onclick="copyDownloadUrl(${idx})" title="คัดลอกลิงก์">📋</button>`
+                                }
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
         }
 
         // --- Sticky Notes Autosave ---
@@ -979,12 +1295,20 @@ button:focus-visible, input:focus-visible, textarea:focus-visible {
             renderBookmarkList(data.bookmarks || []);
             renderHistoryList(data.history || []);
             renderDownloadList(data.downloads || []);
+            renderDetectedMediaList(data.detectedMedia || []);
 
             // Notes
             const notesArea = document.getElementById('notesArea');
             if (notesArea && document.activeElement !== notesArea && data.notes !== undefined) {
                 notesArea.value = data.notes;
             }
+        };
+
+        window.updateDownloadsLive = function(downloads, detectedMedia) {
+            panelState.downloads = downloads || [];
+            panelState.detectedMedia = detectedMedia || [];
+            renderDownloadList(panelState.downloads);
+            renderDetectedMediaList(panelState.detectedMedia);
         };
 
         window.updateAiReport = function(report) {

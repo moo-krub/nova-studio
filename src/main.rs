@@ -3,6 +3,8 @@ use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
+mod downloader;
+
 use std::{
     collections::HashMap,
     fs,
@@ -63,10 +65,28 @@ struct HistoryItem {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 struct DownloadItem {
+    id: String,
     file_name: String,
     url: String,
     path: String,
-    status: String, // "downloading" | "completed" | "failed"
+    status: String, // "downloading" | "completed" | "failed" | "cancelled"
+    timestamp: u64,
+    downloaded_bytes: u64,
+    total_bytes: u64,
+    pct: u32,
+    speed_bps: u64,
+    mode: String,   // "Browser" | "8x Turbo" | "1x Stream" | "HLS (...)"
+    message: String,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+struct DetectedMediaItem {
+    url: String,
+    media_type: String,
+    title: String,
+    page_url: String,
+    tab_id: usize,
     timestamp: u64,
 }
 
@@ -231,6 +251,7 @@ struct SharedAiBridge {
     active_url: String,
     active_title: String,
     extract_seq: u64,
+    detected_media: Vec<DetectedMediaItem>,
 }
 
 // =========================================================================
@@ -299,8 +320,13 @@ enum UiCommand {
     ClearHistory,
     DeleteHistoryItem { index: usize },
     OpenDownloadedFile { path: String },
+    ShowInFolder { path: String },
     OpenDownloadsFolder,
     ClearDownloads,
+    StartTurboDownload { url: String, filename: Option<String>, segments: Option<usize> },
+    CancelDownload { id: String },
+    ClearDetectedMedia,
+    ScanPageMedia,
     // --- คำสั่ง AI Agent ---
     EvalJs { script: String },
     AiHighlightElements { show: bool },
@@ -318,9 +344,13 @@ enum UiCommand {
     InternalPageExtracted { report: String, secret: Option<String> },
     InternalAdBlocked { count: Option<usize>, secret: Option<String> },
     InternalSaveOfflineHtml { title: String, html: String, secret: Option<String> },
+    InternalMediaDetected { id: usize, url: String, media_type: String, title: String, page_url: String, secret: Option<String> },
     InternalLoadState { id: usize, loading: bool },
     InternalDownloadStarted { url: String, path: String },
     InternalDownloadCompleted { url: String, path: String, success: bool },
+    InternalTurboStarted { id: String, file_name: String, url: String, path: String, total_bytes: u64, mode: String },
+    InternalTurboProgress { id: String, downloaded_bytes: u64, total_bytes: u64, pct: u32, speed_bps: u64, mode: String },
+    InternalTurboFinished { id: String, success: bool, file_name: String, path: String, message: String },
 }
 
 struct Tab {
@@ -396,23 +426,6 @@ fn load_adblock_rules(builtins: &[&str]) -> Vec<String> {
         let _ = std::fs::write(rules_file, default_content);
     }
     list
-}
-
-/// ป้องกันการเขียนทับไฟล์ดาวน์โหลดเดิม: ถ้าชื่อซ้ำจะเปลี่ยนเป็น "name (1).ext", "name (2).ext" ...
-fn unique_download_path(original: &std::path::Path) -> PathBuf {
-    if !original.exists() {
-        return original.to_path_buf();
-    }
-    let parent = original.parent().map(|p| p.to_path_buf()).unwrap_or_default();
-    let stem = original.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "download".into());
-    let ext = original.extension().map(|e| format!(".{}", e.to_string_lossy())).unwrap_or_default();
-    for n in 1..10_000 {
-        let candidate = parent.join(format!("{stem} ({n}){ext}"));
-        if !candidate.exists() {
-            return candidate;
-        }
-    }
-    original.to_path_buf()
 }
 
 fn shell_ipc_allowed(body: &str) -> bool {
@@ -516,6 +529,7 @@ fn main() -> wry::Result<()> {
             active_url: String::new(),
             active_title: String::new(),
             extract_seq: 0,
+            detected_media: Vec::new(),
         }),
         Condvar::new(),
     ));
@@ -607,6 +621,8 @@ fn main() -> wry::Result<()> {
     let mut always_on_top = false;
     let mut is_fullscreen = false;
     let mut ui_modal_open = false;
+    let mut download_cancels: HashMap<String, Arc<AtomicBool>> = HashMap::new();
+    let mut next_dl_seq: u64 = 1;
 
     // กู้คืนแท็บเดิมทั้งหมดตอนเปิดโปรแกรม
     if !storage.saved_tabs.is_empty() {
@@ -775,7 +791,7 @@ fn main() -> wry::Result<()> {
                             })
                             // 📥 ระบบดักจับการดาวน์โหลดไฟล์ระดับ Native ของเบราว์เซอร์
                             .with_download_started_handler(move |dl_url: String, default_path: &mut PathBuf| {
-                                *default_path = unique_download_path(default_path);
+                                *default_path = downloader::unique_download_path(default_path);
                                 let path_str = default_path.display().to_string();
                                 println!("📥 [Download Started] กำลังดาวน์โหลด: {} -> {}", dl_url, path_str);
                                 let _ = proxy_dl_start.send_event(UiCommand::InternalDownloadStarted {
@@ -799,6 +815,7 @@ fn main() -> wry::Result<()> {
                                         UiCommand::InternalUrlChanged { secret, .. }
                                         | UiCommand::InternalPageExtracted { secret, .. }
                                         | UiCommand::InternalAdBlocked { secret, .. }
+                                        | UiCommand::InternalMediaDetected { secret, .. }
                                         | UiCommand::InternalSaveOfflineHtml { secret, .. } => {
                                             secret.as_deref() == Some(expected_secret.as_str())
                                         }
@@ -891,12 +908,21 @@ fn main() -> wry::Result<()> {
                             .map(|n| n.to_string_lossy().to_string())
                             .unwrap_or_else(|| "file_download".to_string());
                         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs();
+                        let dl_id = format!("br_{}", next_dl_seq);
+                        next_dl_seq += 1;
                         storage.downloads.insert(0, DownloadItem {
+                            id: dl_id,
                             file_name,
                             url,
                             path,
                             status: "downloading".to_string(),
                             timestamp: now,
+                            downloaded_bytes: 0,
+                            total_bytes: 0,
+                            pct: 0,
+                            speed_bps: 0,
+                            mode: "Browser".to_string(),
+                            message: "กำลังโหลดผ่าน WebView2".to_string(),
                         });
                         side_panel_open = true; // เปิดแถบด้านขวาโชว์ความคืบหน้าดาวน์โหลดอัตโนมัติ
                         sync_all_views(
@@ -904,11 +930,19 @@ fn main() -> wry::Result<()> {
                             &current_workspace, win_size.width, win_size.height,
                             tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
                         );
+                        let _ = panel_webview.evaluate_script("window.switchSection && window.switchSection('dl');");
                     }
                     UiCommand::InternalDownloadCompleted { url, path, success } => {
                         if let Some(item) = storage.downloads.iter_mut().find(|d| d.status == "downloading" && (d.url == url || d.path == path)) {
                             item.status = if success { "completed".to_string() } else { "failed".to_string() };
+                            item.pct = if success { 100 } else { item.pct };
+                            item.speed_bps = 0;
+                            item.message = if success { "ดาวน์โหลดสำเร็จ".into() } else { "ดาวน์โหลดล้มเหลว".into() };
                             if !path.is_empty() {
+                                if let Ok(meta) = fs::metadata(&path) {
+                                    item.downloaded_bytes = meta.len();
+                                    item.total_bytes = meta.len();
+                                }
                                 item.path = path.clone();
                             }
                         }
@@ -924,6 +958,170 @@ fn main() -> wry::Result<()> {
                         let toast = if success { format!("✅ ดาวน์โหลดเสร็จ: {}", fname) } else { format!("❌ ดาวน์โหลดล้มเหลว: {}", fname) };
                         let safe = toast.replace('\\', "\\\\").replace('"', "\\\"");
                         let _ = ui_webview.evaluate_script(&format!("window.showToast && window.showToast(\"{}\");", safe));
+                    }
+                    UiCommand::StartTurboDownload { url, filename, segments } => {
+                        let clean_url = url.trim().to_string();
+                        if clean_url.starts_with("http://") || clean_url.starts_with("https://") {
+                            let dl_id = format!("tb_{}", next_dl_seq);
+                            next_dl_seq += 1;
+                            let segs = segments.unwrap_or(8).clamp(1, 16);
+
+                            let mut referer: Option<String> = None;
+                            let mut cookie_header: Option<String> = None;
+                            if let Some(tab) = tabs.get(&active_tab_id) {
+                                if !tab.url.is_empty() && !tab.url.starts_with("about:") {
+                                    referer = Some(tab.url.clone());
+                                }
+                                if let Ok(cookies) = tab.webview.cookies_for_url(&clean_url) {
+                                    let joined: Vec<String> = cookies
+                                        .iter()
+                                        .map(|c| format!("{}={}", c.name(), c.value()))
+                                        .collect();
+                                    if !joined.is_empty() {
+                                        cookie_header = Some(joined.join("; "));
+                                    }
+                                }
+                            }
+
+                            let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs();
+                            let pre_name = filename
+                                .clone()
+                                .filter(|s| !s.trim().is_empty())
+                                .or_else(|| downloader::extract_filename_from_url(&clean_url))
+                                .unwrap_or_else(|| "เตรียมดาวน์โหลด...".into());
+                            storage.downloads.insert(0, DownloadItem {
+                                id: dl_id.clone(),
+                                file_name: pre_name,
+                                url: clean_url.clone(),
+                                path: String::new(),
+                                status: "downloading".to_string(),
+                                timestamp: now,
+                                downloaded_bytes: 0,
+                                total_bytes: 0,
+                                pct: 0,
+                                speed_bps: 0,
+                                mode: format!("{}x Turbo", segs),
+                                message: "กำลังเชื่อมต่อเซิร์ฟเวอร์...".into(),
+                            });
+
+                            let cancel_flag = Arc::new(AtomicBool::new(false));
+                            download_cancels.insert(dl_id.clone(), Arc::clone(&cancel_flag));
+                            side_panel_open = true;
+                            sync_all_views(
+                                &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
+                                &current_workspace, win_size.width, win_size.height,
+                                tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                            );
+                            let _ = panel_webview.evaluate_script("window.switchSection && window.switchSection('dl');");
+
+                            let proxy_tb = proxy.clone();
+                            thread::spawn(move || {
+                                downloader::run_turbo_download(
+                                    downloader::TurboRequest {
+                                        id: dl_id,
+                                        url: clean_url,
+                                        suggested_filename: filename.filter(|s| !s.trim().is_empty()),
+                                        referer,
+                                        cookie_header,
+                                        segments: segs,
+                                        save_dir: None,
+                                    },
+                                    cancel_flag,
+                                    move |ev| match ev {
+                                        downloader::TurboEvent::Started { id, file_name, url, path, total_bytes, mode } => {
+                                            let _ = proxy_tb.send_event(UiCommand::InternalTurboStarted { id, file_name, url, path, total_bytes, mode });
+                                        }
+                                        downloader::TurboEvent::Progress { id, downloaded_bytes, total_bytes, pct, speed_bps, mode } => {
+                                            let _ = proxy_tb.send_event(UiCommand::InternalTurboProgress { id, downloaded_bytes, total_bytes, pct, speed_bps, mode });
+                                        }
+                                        downloader::TurboEvent::Finished { id, success, file_name, path, message } => {
+                                            let _ = proxy_tb.send_event(UiCommand::InternalTurboFinished { id, success, file_name, path, message });
+                                        }
+                                    },
+                                );
+                            });
+                        } else {
+                            let _ = ui_webview.evaluate_script("window.showToast && window.showToast('❌ กรุณากรอก URL ที่ขึ้นต้นด้วย http:// หรือ https://');");
+                        }
+                    }
+                    UiCommand::CancelDownload { id } => {
+                        if let Some(flag) = download_cancels.remove(&id) {
+                            flag.store(true, Ordering::Relaxed);
+                        }
+                        if let Some(item) = storage.downloads.iter_mut().find(|d| d.id == id && d.status == "downloading") {
+                            item.status = "cancelled".to_string();
+                            item.speed_bps = 0;
+                            item.message = "ยกเลิกแล้ว".to_string();
+                        }
+                        push_downloads_to_panel(&panel_webview, &storage.downloads, &ai_bridge);
+                    }
+                    UiCommand::ClearDetectedMedia => {
+                        if let Ok(mut guard) = ai_bridge.0.lock() {
+                            guard.detected_media.clear();
+                        }
+                        push_downloads_to_panel(&panel_webview, &storage.downloads, &ai_bridge);
+                    }
+                    UiCommand::ScanPageMedia => {
+                        if let Some(t) = tabs.get(&active_tab_id) {
+                            let _ = t.webview.evaluate_script("window.__novaScanMedia && window.__novaScanMedia();");
+                        }
+                    }
+                    UiCommand::InternalTurboStarted { id, file_name, url, path, total_bytes, mode } => {
+                        if let Some(item) = storage.downloads.iter_mut().find(|d| d.id == id) {
+                            item.file_name = file_name;
+                            item.url = url;
+                            item.path = path;
+                            item.total_bytes = total_bytes;
+                            item.mode = mode;
+                            item.message = "กำลังดาวน์โหลด...".into();
+                        }
+                        push_downloads_to_panel(&panel_webview, &storage.downloads, &ai_bridge);
+                    }
+                    UiCommand::InternalTurboProgress { id, downloaded_bytes, total_bytes, pct, speed_bps, mode } => {
+                        if let Some(item) = storage.downloads.iter_mut().find(|d| d.id == id) {
+                            item.downloaded_bytes = downloaded_bytes;
+                            if total_bytes > 0 {
+                                item.total_bytes = total_bytes;
+                            }
+                            item.pct = pct;
+                            item.speed_bps = speed_bps;
+                            item.mode = mode;
+                        }
+                        if side_panel_open {
+                            push_downloads_to_panel(&panel_webview, &storage.downloads, &ai_bridge);
+                        }
+                    }
+                    UiCommand::InternalTurboFinished { id, success, file_name, path, message } => {
+                        download_cancels.remove(&id);
+                        if let Some(item) = storage.downloads.iter_mut().find(|d| d.id == id) {
+                            if item.status != "cancelled" {
+                                item.status = if success { "completed".to_string() } else { "failed".to_string() };
+                            }
+                            if success {
+                                item.pct = 100;
+                                if let Ok(meta) = fs::metadata(&path) {
+                                    item.downloaded_bytes = meta.len();
+                                    item.total_bytes = meta.len();
+                                }
+                            }
+                            item.file_name = file_name.clone();
+                            item.path = path;
+                            item.speed_bps = 0;
+                            item.message = message.clone();
+                        }
+                        storage.save();
+                        sync_all_views(
+                            &ui_webview, &panel_webview, &tabs, &tab_order, active_tab_id,
+                            &current_workspace, win_size.width, win_size.height,
+                            tiling_mode, side_panel_open, zen_mode, ui_modal_open, &mut storage, always_on_top, &ai_bridge, &blocked_counter,
+                        );
+                        let toast = if success {
+                            format!("⚡ Turbo โหลดเสร็จ: {}", file_name)
+                        } else {
+                            format!("⚠️ {}: {}", file_name, message)
+                        };
+                        let safe = serde_json::to_string(&toast).unwrap_or_else(|_| "\"\"".into());
+                        let _ = ui_webview.evaluate_script(&format!("window.showToast && window.showToast({});", safe));
                     }
                     UiCommand::MoveTabById { id, before_id } => {
                         // ลากแท็บ: ย้าย id ไปไว้หน้า before_id (None = ท้ายสุด) ตามลำดับ tab_order
@@ -961,6 +1159,21 @@ fn main() -> wry::Result<()> {
                         );
                     }
                     UiCommand::OpenDownloadedFile { path } => {
+                        if !path.is_empty() && PathBuf::from(&path).exists() {
+                            #[cfg(target_os = "windows")]
+                            let _ = std::process::Command::new("cmd")
+                                .args(["/C", "start", "", &path])
+                                .creation_flags(0x08000000)
+                                .spawn();
+                            #[cfg(target_os = "macos")]
+                            let _ = std::process::Command::new("open").arg(&path).spawn();
+                            #[cfg(target_os = "linux")]
+                            let _ = std::process::Command::new("xdg-open").arg(&path).spawn();
+                        } else {
+                            let _ = ui_webview.evaluate_script("window.showToast && window.showToast('⚠️ ไม่พบไฟล์ในตำแหน่งที่บันทึกไว้');");
+                        }
+                    }
+                    UiCommand::ShowInFolder { path } => {
                         if !path.is_empty() {
                             #[cfg(target_os = "windows")]
                             let _ = std::process::Command::new("explorer").arg(format!("/select,{}", path)).spawn();
@@ -971,19 +1184,17 @@ fn main() -> wry::Result<()> {
                         }
                     }
                     UiCommand::OpenDownloadsFolder => {
-                        if let Some(first) = storage.downloads.first() {
-                            if let Some(parent) = PathBuf::from(&first.path).parent() {
-                                #[cfg(target_os = "windows")]
-                                let _ = std::process::Command::new("explorer").arg(parent).spawn();
-                                #[cfg(target_os = "macos")]
-                                let _ = std::process::Command::new("open").arg(parent).spawn();
-                                #[cfg(target_os = "linux")]
-                                let _ = std::process::Command::new("xdg-open").arg(parent).spawn();
-                                return;
-                            }
-                        }
+                        let folder = storage
+                            .downloads
+                            .iter()
+                            .find_map(|d| PathBuf::from(&d.path).parent().filter(|p| !p.as_os_str().is_empty()).map(|p| p.to_path_buf()))
+                            .unwrap_or_else(downloader::default_downloads_dir);
                         #[cfg(target_os = "windows")]
-                        let _ = std::process::Command::new("explorer").arg(".").spawn();
+                        let _ = std::process::Command::new("explorer").arg(&folder).spawn();
+                        #[cfg(target_os = "macos")]
+                        let _ = std::process::Command::new("open").arg(&folder).spawn();
+                        #[cfg(target_os = "linux")]
+                        let _ = std::process::Command::new("xdg-open").arg(&folder).spawn();
                     }
                     UiCommand::ClearDownloads => {
                         storage.downloads.clear();
@@ -1423,11 +1634,18 @@ fn main() -> wry::Result<()> {
                             let _ = fs::write(&full_p, &html);
                             let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs();
                             storage.downloads.insert(0, DownloadItem {
+                                id: format!("html_{}", now),
                                 file_name: format!("{}.html", safe_name.trim()),
                                 url: "Offline HTML Snapshot".to_string(),
                                 path: full_p.display().to_string(),
                                 status: "completed".to_string(),
                                 timestamp: now,
+                                downloaded_bytes: html.len() as u64,
+                                total_bytes: html.len() as u64,
+                                pct: 100,
+                                speed_bps: 0,
+                                mode: "Offline HTML".to_string(),
+                                message: "บันทึกหน้าเว็บสำเร็จ".to_string(),
                             });
                         } else {
                             let _ = fs::write(&filename, &html);
@@ -1726,6 +1944,27 @@ fn main() -> wry::Result<()> {
                         storage.blocked_count = total;
                         let _ = ui_webview.evaluate_script(&format!("window.updateBlockedCount && window.updateBlockedCount({});", total));
                     }
+                    UiCommand::InternalMediaDetected { id, url, media_type, title, page_url, .. } => {
+                        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs();
+                        if let Ok(mut guard) = ai_bridge.0.lock() {
+                            if !guard.detected_media.iter().any(|m| m.url == url) {
+                                guard.detected_media.insert(0, DetectedMediaItem {
+                                    url,
+                                    media_type,
+                                    title,
+                                    page_url,
+                                    tab_id: id,
+                                    timestamp: now,
+                                });
+                                if guard.detected_media.len() > 40 {
+                                    guard.detected_media.truncate(40);
+                                }
+                            }
+                        }
+                        if side_panel_open {
+                            push_downloads_to_panel(&panel_webview, &storage.downloads, &ai_bridge);
+                        }
+                    }
                 }
             }
             _ => {}
@@ -1928,9 +2167,15 @@ fn sync_all_views(
 
     if panel_open {
         let hib_count = tabs.values().filter(|t| t.hibernated).count();
+        let detected_media = ai_bridge
+            .0
+            .lock()
+            .map(|g| g.detected_media.clone())
+            .unwrap_or_default();
         let panel_data = serde_json::json!({
             "history": storage.history,
             "downloads": storage.downloads,
+            "detectedMedia": detected_media,
             "notes": storage.notes,
             "bookmarks": storage.bookmarks,
             "tabs": tab_list,
@@ -1940,6 +2185,24 @@ fn sync_all_views(
         });
         let _ = panel_webview.evaluate_script(&format!("window.renderPanelData && window.renderPanelData({});", panel_data));
     }
+}
+
+fn push_downloads_to_panel(
+    panel_webview: &WebView,
+    downloads: &[DownloadItem],
+    ai_bridge: &Arc<(Mutex<SharedAiBridge>, Condvar)>,
+) {
+    let detected_media = ai_bridge
+        .0
+        .lock()
+        .map(|g| g.detected_media.clone())
+        .unwrap_or_default();
+    let dl_json = serde_json::to_string(downloads).unwrap_or_else(|_| "[]".to_string());
+    let media_json = serde_json::to_string(&detected_media).unwrap_or_else(|_| "[]".to_string());
+    let _ = panel_webview.evaluate_script(&format!(
+        "window.updateDownloadsLive && window.updateDownloadsLive({}, {});",
+        dl_json, media_json
+    ));
 }
 
 fn request_live_dom_snapshot(
@@ -2027,7 +2290,9 @@ fn start_ai_agent_server(
                                         { "name": "browser_autopilot", "description": "สั่งบอทค้นหาหรือคลิกปุ่มตามเป้าหมายอัตโนมัติ", "inputSchema": { "type": "object", "properties": { "goal": {"type": "string"} } } },
                                         { "name": "browser_click", "description": "คลิกปุ่มด้วยหมายเลข ID หรือ CSS Selector", "inputSchema": { "type": "object", "properties": { "target": {"type": "string"} } } },
                                         { "name": "browser_type", "description": "พิมพ์ข้อความลงในช่อง Input ด้วยหมายเลข ID หรือ CSS Selector", "inputSchema": { "type": "object", "properties": { "target": {"type": "string"}, "text": {"type": "string"} } } },
-                                        { "name": "browser_shadow_mode", "description": "ส่งเบราว์เซอร์เข้ามิติมืด (-3000,-3000) หรือดึงกลับ", "inputSchema": { "type": "object", "properties": { "enable": {"type": "boolean"} } } }
+                                        { "name": "browser_shadow_mode", "description": "ส่งเบราว์เซอร์เข้ามิติมืด (-3000,-3000) หรือดึงกลับ", "inputSchema": { "type": "object", "properties": { "enable": {"type": "boolean"} } } },
+                                        { "name": "browser_turbo_download", "description": "ดาวน์โหลดไฟล์หรือสตรีม .m3u8 แบบ Multi-Segment (IDM Turbo) พร้อมส่งต่อ Cookie จากแท็บปัจจุบัน", "inputSchema": { "type": "object", "properties": { "url": {"type": "string"}, "filename": {"type": "string"}, "segments": {"type": "integer"} }, "required": ["url"] } },
+                                        { "name": "browser_list_media", "description": "ดึงรายการไฟล์สื่อ/วิดีโอ/.m3u8 ที่ตรวจพบล่าสุดในเบราว์เซอร์", "inputSchema": { "type": "object", "properties": {} } }
                                     ]
                                 }
                             }),
@@ -2044,6 +2309,18 @@ fn start_ai_agent_server(
                                     "browser_click" => { if let Some(t) = args["target"].as_str() { let _ = proxy.send_event(UiCommand::AiClick { target: t.to_string() }); } }
                                     "browser_type" => { if let (Some(t), Some(txt)) = (args["target"].as_str(), args["text"].as_str()) { let _ = proxy.send_event(UiCommand::AiType { target: t.to_string(), text: txt.to_string() }); } }
                                     "browser_shadow_mode" => { if let Some(en) = args["enable"].as_bool() { let _ = proxy.send_event(UiCommand::ToggleShadowMode { enable: en }); } }
+                                    "browser_turbo_download" => {
+                                        if let Some(u) = args["url"].as_str() {
+                                            let fname = args["filename"].as_str().map(str::to_string);
+                                            let segs = args["segments"].as_u64().map(|n| n as usize);
+                                            let _ = proxy.send_event(UiCommand::StartTurboDownload { url: u.to_string(), filename: fname, segments: segs });
+                                            reply_text = format!("⚡ เริ่มดาวน์โหลด Turbo แล้ว: {}", u);
+                                        }
+                                    }
+                                    "browser_list_media" => {
+                                        let list = ai_bridge.0.lock().map(|g| g.detected_media.clone()).unwrap_or_default();
+                                        reply_text = serde_json::to_string_pretty(&list).unwrap_or_else(|_| "[]".into());
+                                    }
                                     _ => { is_known_tool = false; }
                                 }
                                 if is_known_tool {

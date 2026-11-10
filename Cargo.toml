@@ -1,6 +1,6 @@
 [package]
 name = "my_rust_browser"
-version = "6.4.1"
+version = "6.4.2"
 edition = "2024"
 authors = ["Nova Studio Team <core@nova-studio.dev>"]
 description = "Nova Studio — Hyper-Performance 2027 Spatial Web Browser Engineered in Rust with Tao, Wry, and WebView2"

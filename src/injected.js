@@ -1,5 +1,8 @@
 (function() {
     const __SECRET = "__NOVA_SECRET_PLACEHOLDER__";
+    const __NOVA_HOST = (window.location && window.location.hostname ? window.location.hostname : '').toLowerCase();
+    // Preserve native prototypes/DOM untouched on strict anti-bot, commerce, auth, challenge, and payment hosts
+    const __NOVA_STRICT_SITE = /(^|\.)(shopee\.[a-z.]+|shp\.ee|lazada\.[a-z.]+|tiktok\.com|accounts\.google\.com|cloudflare\.com|challenges\.cloudflare\.com|hcaptcha\.com|recaptcha\.net|gstatic\.com|arkoselabs\.com|funcaptcha\.com|datadome\.co|paypal\.com|stripe\.com|omise\.co|2c2p\.com|kasikornbank\.com|scbeasy\.com|krungsri\.com)$/i.test(__NOVA_HOST);
     const AD_PATTERNS = [
         'doubleclick.net', 'googlesyndication.com', 'googleadservices.com',
         'adservice.google.com', 'adnxs.com', 'taboola.com', 'outbrain.com',
@@ -83,37 +86,39 @@
         return count;
     };
 
-    const origFetch = window.fetch;
-    window.fetch = function(input, init) {
-        const url = (typeof input === 'string') ? input : (input && input.url ? input.url : '');
-        if (isAdUrl(url)) {
-            reportBlockedAd(1);
-            return Promise.reject(new Error('Blocked by Nova Deep AdGuard'));
-        }
-        const mediaKind = classifyMediaUrl(url);
-        if (mediaKind) reportDetectedMedia(url, mediaKind);
-        return origFetch.apply(this, arguments);
-    };
-
-    const origOpen = XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open = function(method, url) {
-        if (isAdUrl(url)) {
-            this.__novaBlocked = true;
-            reportBlockedAd(1);
-        } else {
+    if (!__NOVA_STRICT_SITE) {
+        const origFetch = window.fetch;
+        window.fetch = function(input, init) {
+            const url = (typeof input === 'string') ? input : (input && input.url ? input.url : '');
+            if (isAdUrl(url)) {
+                reportBlockedAd(1);
+                return Promise.reject(new Error('Blocked by Nova Deep AdGuard'));
+            }
             const mediaKind = classifyMediaUrl(url);
             if (mediaKind) reportDetectedMedia(url, mediaKind);
-        }
-        return origOpen.apply(this, arguments);
-    };
-    const origSend = XMLHttpRequest.prototype.send;
-    XMLHttpRequest.prototype.send = function() {
-        if (this.__novaBlocked) return;
-        return origSend.apply(this, arguments);
-    };
+            return origFetch.apply(this, arguments);
+        };
+
+        const origOpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function(method, url) {
+            if (isAdUrl(url)) {
+                this.__novaBlocked = true;
+                reportBlockedAd(1);
+            } else {
+                const mediaKind = classifyMediaUrl(url);
+                if (mediaKind) reportDetectedMedia(url, mediaKind);
+            }
+            return origOpen.apply(this, arguments);
+        };
+        const origSend = XMLHttpRequest.prototype.send;
+        XMLHttpRequest.prototype.send = function() {
+            if (this.__novaBlocked) return;
+            return origSend.apply(this, arguments);
+        };
+    }
 
     function injectAdblockCss() {
-        if (!window.__NOVA_ADBLOCK) return;
+        if (__NOVA_STRICT_SITE || !window.__NOVA_ADBLOCK) return;
         if (document.getElementById('__nova_adblock_css')) return;
         const style = document.createElement('style');
         style.id = '__nova_adblock_css';
@@ -124,7 +129,7 @@
 
     let purgeTimer = null;
     function schedulePurge() {
-        if (!window.__NOVA_ADBLOCK || purgeTimer) return;
+        if (__NOVA_STRICT_SITE || !window.__NOVA_ADBLOCK || purgeTimer) return;
         purgeTimer = setTimeout(() => {
             purgeTimer = null;
             if (window.requestIdleCallback) {
@@ -136,7 +141,7 @@
     }
 
     function purgeDomAds() {
-        if (!window.__NOVA_ADBLOCK) return;
+        if (__NOVA_STRICT_SITE || !window.__NOVA_ADBLOCK) return;
         injectAdblockCss();
         if (observer) observer.disconnect();
         let removed = 0;
@@ -154,36 +159,25 @@
         if (removed > 0) reportBlockedAd(removed);
     }
 
-    const observer = new MutationObserver(() => schedulePurge());
-    if (document.documentElement) {
-        observer.observe(document.documentElement, { childList: true, subtree: true });
-        injectAdblockCss();
-    } else {
-        document.addEventListener('DOMContentLoaded', () => {
-            if (document.documentElement) observer.observe(document.documentElement, { childList: true, subtree: true });
+    const observer = __NOVA_STRICT_SITE ? null : new MutationObserver(() => schedulePurge());
+    if (observer) {
+        if (document.documentElement) {
+            observer.observe(document.documentElement, { childList: true, subtree: true });
             injectAdblockCss();
-        });
+        } else {
+            document.addEventListener('DOMContentLoaded', () => {
+                if (document.documentElement) observer.observe(document.documentElement, { childList: true, subtree: true });
+                injectAdblockCss();
+            });
+        }
     }
 
+    // Only patch Navigator.prototype.webdriver if the runtime explicitly exposes true; leave genuine false untouched
     try {
-        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-        window.chrome = window.chrome || { runtime: {}, app: {} };
-        Object.defineProperty(navigator, 'languages', { get: () => ['th-TH', 'th', 'en-US', 'en'] });
-    } catch (e) {}
-
-    const _origWindowOpen = window.open;
-    window.open = function(url, target, features) {
-        // Delegate to native window.open so popup blocker checks pass and video players don\'t halt
-        try {
-            if (typeof _origWindowOpen === 'function') {
-                return _origWindowOpen.apply(this, arguments);
-            }
-        } catch (e) {}
-        if (url) {
-            window.ipc.postMessage(JSON.stringify({ cmd: 'NewTab', url: url, incognito: false, workspace: null, pinned: false }));
+        if (navigator.webdriver === true && typeof Navigator !== 'undefined' && Navigator.prototype) {
+            Object.defineProperty(Navigator.prototype, 'webdriver', { get: () => false, configurable: true });
         }
-        return null;
-    };
+    } catch (e) {}
 
     // --- SPA Navigation Watcher (YouTube, Facebook, Twitter, Gmail, React router) ---
     function notifyUrlChange() {
@@ -198,18 +192,22 @@
             } catch (e) {}
         }
     }
-    const _origPushState = history.pushState;
-    history.pushState = function() {
-        const ret = _origPushState.apply(this, arguments);
-        notifyUrlChange();
-        return ret;
-    };
-    const _origReplaceState = history.replaceState;
-    history.replaceState = function() {
-        const ret = _origReplaceState.apply(this, arguments);
-        notifyUrlChange();
-        return ret;
-    };
+    if ('navigation' in window && window.navigation && typeof window.navigation.addEventListener === 'function') {
+        window.navigation.addEventListener('navigatesuccess', notifyUrlChange);
+    } else if (!__NOVA_STRICT_SITE) {
+        const _origPushState = history.pushState;
+        history.pushState = function() {
+            const ret = _origPushState.apply(this, arguments);
+            notifyUrlChange();
+            return ret;
+        };
+        const _origReplaceState = history.replaceState;
+        history.replaceState = function() {
+            const ret = _origReplaceState.apply(this, arguments);
+            notifyUrlChange();
+            return ret;
+        };
+    }
     window.addEventListener('popstate', notifyUrlChange);
     window.addEventListener('hashchange', notifyUrlChange);
 
@@ -587,47 +585,16 @@
         }
     }, true);
 
-    // =========================================================================
-    // 🛡️ Canvas & Audio Fingerprint Anti-Tracking Shield (Brave/Mullvad Grade)
-    // =========================================================================
+    // Hide Nova helper properties from Object.keys(window) enumeration
     try {
-        const _origGetImageData = CanvasRenderingContext2D.prototype.getImageData;
-        CanvasRenderingContext2D.prototype.getImageData = function(sx, sy, sw, sh) {
-            const imgData = _origGetImageData.apply(this, arguments);
-            if (imgData && imgData.data && imgData.data.length >= 16) {
-                const step = Math.floor(imgData.data.length / 4);
-                for (let i = 0; i < 4; i++) {
-                    const idx = (i * step) + (i % 3);
-                    imgData.data[idx] = (imgData.data[idx] + 1) % 256;
+        Object.keys(window).forEach(k => {
+            if (k.startsWith('__nova') || k.startsWith('__NOVA')) {
+                const desc = Object.getOwnPropertyDescriptor(window, k);
+                if (desc && desc.configurable && desc.enumerable) {
+                    desc.enumerable = false;
+                    Object.defineProperty(window, k, desc);
                 }
             }
-            return imgData;
-        };
-
-        const _origToDataURL = HTMLCanvasElement.prototype.toDataURL;
-        HTMLCanvasElement.prototype.toDataURL = function() {
-            try {
-                const ctx = this.getContext('2d');
-                if (ctx && this.width > 0 && this.height > 0) {
-                    const img = ctx.getImageData(0, 0, Math.min(this.width, 16), Math.min(this.height, 16));
-                    if (img && img.data && img.data.length > 0) {
-                        img.data[0] = (img.data[0] + 1) % 256;
-                        ctx.putImageData(img, 0, 0);
-                    }
-                }
-            } catch (e) {}
-            return _origToDataURL.apply(this, arguments);
-        };
-
-        if (window.AudioBuffer && AudioBuffer.prototype.getChannelData) {
-            const _origGetChannelData = AudioBuffer.prototype.getChannelData;
-            AudioBuffer.prototype.getChannelData = function() {
-                const channelData = _origGetChannelData.apply(this, arguments);
-                if (channelData && channelData.length > 10) {
-                    channelData[5] += 0.0000001 * (Math.random() > 0.5 ? 1 : -1);
-                }
-                return channelData;
-            };
-        }
+        });
     } catch (e) {}
 })();

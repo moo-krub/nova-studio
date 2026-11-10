@@ -482,8 +482,6 @@ fn main() -> wry::Result<()> {
     let extreme_gpu_flags = concat!(
         "--remote-debugging-port=9223 ",
         "--ignore-gpu-blocklist ",
-        "--ignore-certificate-errors ",
-        "--test-type ",
         "--enable-gpu-rasterization ",
         "--enable-zero-copy ",
         "--enable-oop-rasterization ",
@@ -492,9 +490,7 @@ fn main() -> wry::Result<()> {
         "--enable-parallel-downloading ",
         "--disk-cache-size=1073741824 ",
         "--autoplay-policy=no-user-gesture-required ",
-        "--enable-features=CanvasOopRasterization,UseSkiaRenderer,WebAssemblyLazyCompilation,AsyncDns,DnsOverHttps ",
-        "--dns-over-https-mode=secure ",
-        "--doh-templates=https://1.1.1.1/dns-query https://dns.google/dns-query ",
+        "--enable-features=CanvasOopRasterization,UseSkiaRenderer,WebAssemblyLazyCompilation ",
         "--disable-blink-features=AutomationControlled"
     );
     unsafe {
@@ -665,8 +661,6 @@ fn main() -> wry::Result<()> {
         "rubiconproject.com", "criteo.com", "pubmatic.com", "amazon-adsystem.com",
     ];
     let ad_domains = Arc::new(load_adblock_rules(&ad_domains_static));
-    // UA ยุคปัจจุบัน (Chrome/141 + Edg/141) — เว็บเสิร์ฟโค้ดรุ่นใหม่ ไม่ตกเป็นเบราว์เซอร์เก่า
-    let stealth_ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0";
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
@@ -745,7 +739,7 @@ fn main() -> wry::Result<()> {
                         let tab_secret = ipc_secret.clone();
 
                         let init_script = format!(
-                            "window.__NOVA_TAB_ID = {};\nwindow.__NOVA_ADBLOCK = {};\nwindow.__NOVA_CURRENT_VERSION = 'v{}';\n{}",
+                            "(function(){{var d=function(k,v){{try{{Object.defineProperty(window,k,{{value:v,writable:true,configurable:true,enumerable:false}})}}catch(_){{window[k]=v}}}};d('__NOVA_TAB_ID',{});d('__NOVA_ADBLOCK',{});d('__NOVA_CURRENT_VERSION','v{}');}})();\n{}",
                             id,
                             adblock_active,
                             env!("CARGO_PKG_VERSION"),
@@ -773,8 +767,8 @@ fn main() -> wry::Result<()> {
                                 wry::WebContext::new(Some(dir))
                             }
                         });
+                        // Use native WebView2 desktop Edge UA so headers & Sec-CH-UA client hints match authentically
                         let mut builder = WebViewBuilder::new_with_web_context(web_ctx)
-                            .with_user_agent(stealth_ua)
                             .with_incognito(is_incognito)
                             .with_devtools(true)
                             .with_additional_browser_args(extreme_gpu_flags)

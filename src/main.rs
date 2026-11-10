@@ -472,8 +472,15 @@ fn hook_allow_all_certificates(_webview: &wry::WebView) {}
 fn main() -> wry::Result<()> {
     if let Ok(current_exe) = std::env::current_exe() {
         if let Some(parent) = current_exe.parent() {
-            let old_file = parent.join(format!("{}.old", current_exe.file_name().unwrap_or_default().to_string_lossy()));
-            let _ = std::fs::remove_file(old_file);
+            // ล้างไฟล์สำรองทุกตัว (*.old, *.old.<timestamp>) ที่ไม่ถูกโปรเซสอื่นล็อกอยู่
+            let old_prefix = format!("{}.old", current_exe.file_name().unwrap_or_default().to_string_lossy());
+            if let Ok(entries) = std::fs::read_dir(parent) {
+                for entry in entries.flatten() {
+                    if entry.file_name().to_string_lossy().starts_with(&old_prefix) {
+                        let _ = std::fs::remove_file(entry.path());
+                    }
+                }
+            }
             let tmp_file = parent.join("nova_update_tmp.exe");
             let _ = std::fs::remove_file(tmp_file);
         }
@@ -1519,10 +1526,16 @@ fn main() -> wry::Result<()> {
 
                             let parent_dir = current_exe.parent().unwrap_or(std::path::Path::new("."));
                             let temp_download = parent_dir.join("nova_update_tmp.exe");
-                            let old_backup = parent_dir.join(format!("{}.old", current_exe.file_name().unwrap_or_default().to_string_lossy()));
+                            let exe_name = current_exe.file_name().unwrap_or_default().to_string_lossy().to_string();
+                            let mut old_backup = parent_dir.join(format!("{exe_name}.old"));
 
                             let _ = std::fs::remove_file(&temp_download);
                             let _ = std::fs::remove_file(&old_backup);
+                            // ถ้า .old เดิมยังถูกล็อก (เช่น เป็นไฟล์ของโปรเซสเก่าที่ยังรันอยู่) ให้ใช้ชื่อสำรองใหม่แทน
+                            if old_backup.exists() {
+                                let stamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis();
+                                old_backup = parent_dir.join(format!("{exe_name}.old.{stamp}"));
+                            }
 
                             let _ = proxy_upd.send_event(UiCommand::InternalUpdateProgress {
                                 pct: 30,

@@ -398,6 +398,23 @@ fn load_adblock_rules(builtins: &[&str]) -> Vec<String> {
     list
 }
 
+/// ป้องกันการเขียนทับไฟล์ดาวน์โหลดเดิม: ถ้าชื่อซ้ำจะเปลี่ยนเป็น "name (1).ext", "name (2).ext" ...
+fn unique_download_path(original: &std::path::Path) -> PathBuf {
+    if !original.exists() {
+        return original.to_path_buf();
+    }
+    let parent = original.parent().map(|p| p.to_path_buf()).unwrap_or_default();
+    let stem = original.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "download".into());
+    let ext = original.extension().map(|e| format!(".{}", e.to_string_lossy())).unwrap_or_default();
+    for n in 1..10_000 {
+        let candidate = parent.join(format!("{stem} ({n}){ext}"));
+        if !candidate.exists() {
+            return candidate;
+        }
+    }
+    original.to_path_buf()
+}
+
 fn shell_ipc_allowed(body: &str) -> bool {
     serde_json::from_str::<serde_json::Value>(body)
         .ok()
@@ -758,6 +775,7 @@ fn main() -> wry::Result<()> {
                             })
                             // 📥 ระบบดักจับการดาวน์โหลดไฟล์ระดับ Native ของเบราว์เซอร์
                             .with_download_started_handler(move |dl_url: String, default_path: &mut PathBuf| {
+                                *default_path = unique_download_path(default_path);
                                 let path_str = default_path.display().to_string();
                                 println!("📥 [Download Started] กำลังดาวน์โหลด: {} -> {}", dl_url, path_str);
                                 let _ = proxy_dl_start.send_event(UiCommand::InternalDownloadStarted {

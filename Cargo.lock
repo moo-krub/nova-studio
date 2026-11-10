@@ -2545,6 +2545,7 @@ dependencies = [
  "http",
  "librqbit",
  "mimalloc",
+ "quinn",
  "roxmltree",
  "rustls",
  "rustls-platform-verifier",

@@ -31,6 +31,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "sync", "time"] }
 librqbit = "9.1.0"
 h3 = "0.0.8"
 h3-quinn = "0.0.10"
+quinn = { version = "0.11", default-features = false, features = ["runtime-tokio", "rustls-ring"] }
 bytes = "1"
 http = "1"
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }

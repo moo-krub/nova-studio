@@ -162,7 +162,7 @@ pub fn run_torrent_download<F>(
                 emit(TurboEvent::Finished {
                     id: dl_id,
                     success: false,
-                    file_name: last_name,
+                    file_name: last_name.clone(),
                     path: base_dir.join(&last_name).display().to_string(),
                     message: format!("Torrent ผิดพลาด: {err}"),
                 });
